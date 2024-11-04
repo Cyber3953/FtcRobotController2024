@@ -33,7 +33,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Servo;
 
 /**
  * This file contains an example of a Linear "OpMode".
@@ -66,8 +65,24 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp(name = "DriveTest", group = "Robot")
 public class DriveTest extends LinearOpMode {
-    private boolean flipDirection = false;
+    private static final double LEFT_STICK_Y_DEAD_ZONE = 0.1;
+    private static final double LEFT_STICK_X_DEAD_ZONE = 0.1;
+    private static final double RIGHT_STICK_X_DEAD_ZONE = 0.1;
+    private static final double RIGHT_STICK_Y_DEAD_ZONE = 0.1;
+    private static final double SLOW_FACTOR = .5; // halve the speed
+    private static final int ARM_MOTOR_LIMIT = 5000;
+    private static final int SLIDE_MOTOR_LIMIT = 5000;
+    private boolean slowMode = false;
     private boolean yButtonDown = false;
+
+    // Adjust power for a defined dead zone
+    private double adjustPower(double power, double deadZone) {
+        double adjustedPower = power;
+        if (Math.abs(power) > deadZone) {
+            adjustedPower = (power - Math.signum(power) * deadZone) / (1 - deadZone);
+        }
+        return adjustedPower;
+    }
 
     @Override
     public void runOpMode() {
@@ -85,10 +100,20 @@ public class DriveTest extends LinearOpMode {
         backRightMotor.setDirection(DcMotor.Direction.REVERSE);
 
         DcMotor armMotor = hardwareMap.get(DcMotor.class, "arm");
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        // move slightly away from "zeroed" location
+        //        armMotor.setTargetPosition(10);
+        //        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        //        armMotor.setPower(0.5);
 
         DcMotor slideMotor = hardwareMap.get(DcMotor.class, "slide");
         slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        slideMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        // move slightly away from "zeroed" location
+        //        slideMotor.setTargetPosition(10);
+        //        slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        //        slideMotor.setPower(0.5);
 
         CRServo collectServo = hardwareMap.get(CRServo.class, "collect");
 
@@ -98,16 +123,12 @@ public class DriveTest extends LinearOpMode {
 
         // Wait for driver to press Play
         waitForStart();
-        slideMotor.setTargetPosition(10);
-        slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        slideMotor.setPower(0.5);
 
         // Run until driver presses Stop
         while (opModeIsActive()) {
-
-            double leftStickY = gamepad1.left_stick_y;
-            double leftStickX = -gamepad1.left_stick_x;
-            double rightStickX = -gamepad1.right_stick_x;
+            double leftStickX = gamepad1.left_stick_x;
+            double leftStickY = -gamepad1.left_stick_y;
+            double rightStickX = gamepad1.right_stick_x;
             double rightStickY = -gamepad1.right_stick_y;
             double rightTrigger = gamepad1.right_trigger;
             double leftTrigger = gamepad1.left_trigger;
@@ -115,20 +136,21 @@ public class DriveTest extends LinearOpMode {
             boolean leftBumper = gamepad1.left_bumper;
             boolean dpad_up = gamepad1.dpad_up;
             boolean dpad_down = gamepad1.dpad_down;
-            boolean yButton = gamepad1.y;
+            boolean aButton = gamepad1.a; // collection in
+            boolean bButton = gamepad1.b; // collection out
+            boolean yButton = gamepad1.y; // slow mode
             boolean xButton = gamepad1.x;
-            boolean aButton = gamepad1.a;
-            boolean bButton = gamepad1.b;
 
+            // slow mode on & off
             if (yButton) {
                 yButtonDown = true;
             }
             if (!yButton && yButtonDown) {
                 yButtonDown = false;
-                flipDirection = !flipDirection;
+                slowMode = !slowMode;
             }
 
-            // run collection motor intake
+            // collection motor intake/outtake
             if (aButton) {
                 collectServo.setPower(-1.0);
             } else if (bButton) {
@@ -137,97 +159,61 @@ public class DriveTest extends LinearOpMode {
                 collectServo.setPower(0.0);
             }
 
-            if (dpad_up) {
-                armMotor.setPower(-0.5);
+            // arm motor raise/lower
+            double armMotorPower = adjustPower(leftStickY, LEFT_STICK_Y_DEAD_ZONE);
+            if (armMotorPower > 0) {
+                armMotor.setTargetPosition(ARM_MOTOR_LIMIT);
             } else {
-                armMotor.setPower(0.0);
+                armMotor.setTargetPosition(0);
             }
-            if (dpad_down) {
-                armMotor.setPower(0.5);
+            armMotor.setPower(armMotorPower);
+
+            // slide motor out/in
+            double slideMotorPower = adjustPower(rightStickY, LEFT_STICK_Y_DEAD_ZONE);
+            if (slideMotorPower > 0) {
+                slideMotor.setTargetPosition(SLIDE_MOTOR_LIMIT);
             } else {
-                armMotor.setPower(0.0);
+                slideMotor.setTargetPosition(0);
             }
+            slideMotor.setPower(slideMotorPower);
 
-            // stop motors if both triggers are not in use
-            // !leftBumper && !rightBumper &&
-//            if (leftTrigger == 0 && rightTrigger == 0) {
-//                scissorMotor.setPower(0);
-//                slideMotor.setPower(0);
-//            }
-//
-//            // go up and out if right trigger is pressed
-//            if (rightTrigger > 0) {
-//                scissorMotor.setTargetPosition(-5000);
-//                scissorMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//                scissorMotor.setPower(1);
-//
-//                slideMotor.setTargetPosition(1450);
-//                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//                slideMotor.setPower(rightTrigger);
-//            }
-
-            // go back and down if left trigger is pressed
-//            if (leftTrigger > 0) {
-//                slideMotor.setTargetPosition(10);
-//                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//                slideMotor.setPower(leftTrigger);
-//
-//                scissorMotor.setTargetPosition(0);
-//                scissorMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//                scissorMotor.setPower(1);
-//            }
-
-            // Strafe right (or left if direction is flipped)
-            if (rightBumper) {
-                leftStickX = 0.5 * (flipDirection ? 1 : -1);
+            // driving control
+            double forwardPower = rightTrigger - leftTrigger;
+            if (rightTrigger > 0 && leftTrigger > 0) {
+                frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                if (forwardPower < 0) {
+                    forwardPower = 0;
+                }
+            } else {
+                frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+                frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+                backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+                backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
             }
-            // Strafe right (or right if direction is flipped)
-            if (leftBumper) {
-                leftStickX = 0.5 * (flipDirection ? -1 : 1);
+            double turnPower = adjustPower(leftStickX, LEFT_STICK_X_DEAD_ZONE);
+            double strafePower = adjustPower(rightStickX, RIGHT_STICK_X_DEAD_ZONE);
+            double denominator = Math.max(Math.abs(forwardPower) + Math.abs(strafePower) + Math.abs(turnPower), 1);
+            if (slowMode) {
+                denominator /= SLOW_FACTOR;
             }
-
-            // Denominator is the largest motor power (absolute value) or 1
-            // This ensures all the powers maintain the same ratio,
-            // but only if at least one is out of the range [-1, 1]
-            if (flipDirection) {
-                leftStickX *= -1;
-                leftStickY *= -1;
-            }
-
-            // add a dead zone to the left joystick strafe
-            if (Math.abs(leftStickX) < 0.2){
-                leftStickX = 0;
-            }
-
-            double denominator = Math.max(Math.abs(leftStickY) + Math.abs(leftStickX) + Math.abs(rightStickX), 1);
-            double frontLeftPower = (leftStickY + leftStickX + rightStickX) / denominator;
-            double frontRightPower = (leftStickY - leftStickX - rightStickX) / denominator;
-            double backLeftPower = (leftStickY - leftStickX + rightStickX) / denominator;
-            double backRightPower = (leftStickY + leftStickX - rightStickX) / denominator;
-
+            double frontLeftPower = (forwardPower + strafePower + turnPower) / denominator;
+            double frontRightPower = (forwardPower - strafePower - turnPower) / denominator;
+            double backLeftPower = (forwardPower - strafePower + turnPower) / denominator;
+            double backRightPower = (forwardPower + strafePower - turnPower) / denominator;
             frontLeftMotor.setPower(frontLeftPower);
             backLeftMotor.setPower(backLeftPower);
             frontRightMotor.setPower(frontRightPower);
             backRightMotor.setPower(backRightPower);
 
             // Send telemetry message to signify robot running;
-            telemetry.addData("FL", "%.2f", frontLeftPower);
-            telemetry.addData("FL encoder", "%d", frontLeftMotor.getCurrentPosition());
+            telemetry.addData("Arm Power", "%.2f", armMotorPower);
+            telemetry.addData("Arm Encoder", "%d", armMotor.getCurrentPosition());
 
-            telemetry.addData("FR", "%.2f", frontRightPower);
-            telemetry.addData("FR encoder", "%d", frontRightMotor.getCurrentPosition());
-
-            telemetry.addData("BL", "%.2f", backLeftPower);
-            telemetry.addData("BL encoder", "%d", backLeftMotor.getCurrentPosition());
-
-            telemetry.addData("BR", "%.2f", backRightPower);
-            telemetry.addData("BR encoder", "%d", backRightMotor.getCurrentPosition());
-
-//            telemetry.addData("Scissor lift encoder", "%d", scissorMotor.getCurrentPosition());
-
-            telemetry.addData("Slide encoder", "%d", slideMotor.getCurrentPosition());
-
-            telemetry.addData("Flipped direction?", "%b", flipDirection);
+            telemetry.addData("Slide Power", "%.2f", slideMotorPower);
+            telemetry.addData("Slide Encoder", "%d", slideMotor.getCurrentPosition());
             telemetry.update();
         }
     }
