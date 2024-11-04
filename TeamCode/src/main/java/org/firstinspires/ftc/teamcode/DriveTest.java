@@ -32,7 +32,14 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.IMU;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 /**
  * This file contains an example of a Linear "OpMode".
@@ -114,8 +121,8 @@ public class DriveTest extends LinearOpMode {
 
         CRServo collectServo = hardwareMap.get(CRServo.class, "collect");
 
-        boolean yButtonDown = false;
-        boolean slowMode = false;
+        IMU imu = hardwareMap.get(IMU.class, "imu");
+//        ColorSensor colorSensor = hardwareMap.colorSensor.get("color_sensor");
 
         // Send telemetry message to signify robot waiting
         telemetry.addData(">", "Robot Ready.  Press Play.");    //
@@ -123,6 +130,9 @@ public class DriveTest extends LinearOpMode {
 
         // Wait for driver to press Play
         waitForStart();
+
+        boolean yButtonDown = false;
+        boolean slowMode = false;
 
         // Run until driver presses Stop
         while (opModeIsActive()) {
@@ -193,27 +203,29 @@ public class DriveTest extends LinearOpMode {
                 backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
                 backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
             }
-            double turnPower = adjustPower(leftStickX, LEFT_STICK_X_DEAD_ZONE);
-            double strafePower = adjustPower(rightStickX, RIGHT_STICK_X_DEAD_ZONE);
+            double turnPower = adjustPower(-leftStickX, LEFT_STICK_X_DEAD_ZONE);
+            double strafePower = adjustPower(-rightStickX, RIGHT_STICK_X_DEAD_ZONE);
             double denominator = Math.max(Math.abs(forwardPower) + Math.abs(strafePower) + Math.abs(turnPower), 1);
             if (slowMode) {
                 denominator /= SLOW_FACTOR;
             }
-            double frontLeftPower = (forwardPower + strafePower + turnPower) / denominator;
-            double frontRightPower = (forwardPower - strafePower - turnPower) / denominator;
-            double backLeftPower = (forwardPower - strafePower + turnPower) / denominator;
-            double backRightPower = (forwardPower + strafePower - turnPower) / denominator;
+            double frontLeftPower = (strafePower + forwardPower + turnPower) / denominator;
+            double frontRightPower = (strafePower - forwardPower - turnPower) / denominator;
+            double backLeftPower = (strafePower - forwardPower + turnPower) / denominator;
+            double backRightPower = (strafePower + forwardPower - turnPower) / denominator;
             frontLeftMotor.setPower(frontLeftPower);
             backLeftMotor.setPower(backLeftPower);
             frontRightMotor.setPower(frontRightPower);
             backRightMotor.setPower(backRightPower);
 
-            // Send telemetry message to signify robot running;
             telemetry.addData("Arm Power", "%.2f", armMotorPower);
             telemetry.addData("Arm Encoder", "%d", armMotor.getCurrentPosition());
-
             telemetry.addData("Slide Power", "%.2f", slideMotorPower);
             telemetry.addData("Slide Encoder", "%d", slideMotor.getCurrentPosition());
+            telemetry.addData("Slow Mode: ", "%b", slowMode);
+            Orientation orientation = imu.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
+            telemetry.addData("Heading", " %.1f", orientation.firstAngle * 180.0 / Math.PI);
+            telemetry.addData("Angular Velocity", "%.1f", imu.getRobotAngularVelocity(AngleUnit.DEGREES).zRotationRate);
             telemetry.update();
         }
     }
