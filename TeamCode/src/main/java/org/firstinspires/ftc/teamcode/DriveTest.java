@@ -203,16 +203,16 @@ public class DriveTest extends LinearOpMode {
                 backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
                 backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
             }
-            double turnPower = adjustPower(-leftStickX, LEFT_STICK_X_DEAD_ZONE);
-            double strafePower = adjustPower(-rightStickX, RIGHT_STICK_X_DEAD_ZONE);
+            double turnPower = -adjustPower(leftStickX, LEFT_STICK_X_DEAD_ZONE);
+            double strafePower = adjustPower(rightStickX, RIGHT_STICK_X_DEAD_ZONE);
             double denominator = Math.max(Math.abs(forwardPower) + Math.abs(strafePower) + Math.abs(turnPower), 1);
             if (slowMode) {
                 denominator /= SLOW_FACTOR;
             }
-            double frontLeftPower = (strafePower + forwardPower + turnPower) / denominator;
-            double frontRightPower = (strafePower - forwardPower - turnPower) / denominator;
-            double backLeftPower = (strafePower - forwardPower + turnPower) / denominator;
-            double backRightPower = (strafePower + forwardPower - turnPower) / denominator;
+            double frontLeftPower = (forwardPower + strafePower + turnPower) / denominator;
+            double frontRightPower = (forwardPower - strafePower - turnPower) / denominator;
+            double backLeftPower = (forwardPower - strafePower + turnPower) / denominator;
+            double backRightPower = (forwardPower + strafePower - turnPower) / denominator;
             frontLeftMotor.setPower(frontLeftPower);
             backLeftMotor.setPower(backLeftPower);
             frontRightMotor.setPower(frontRightPower);
