@@ -72,8 +72,6 @@ public class DriveTest extends LinearOpMode {
     private static final double SLOW_FACTOR = .5; // halve the speed
     private static final int ARM_MOTOR_LIMIT = 5000;
     private static final int SLIDE_MOTOR_LIMIT = 5000;
-    private boolean slowMode = false;
-    private boolean yButtonDown = false;
 
     // Adjust power for a defined dead zone
     private double adjustPower(double power, double deadZone) {
@@ -86,8 +84,7 @@ public class DriveTest extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        // Initialize Motors
-        /* Declare OpMode members. */
+        // Initialize hardware
         DcMotor frontLeftMotor = hardwareMap.get(DcMotor.class, "fl");
         DcMotor frontRightMotor = hardwareMap.get(DcMotor.class, "fr");
         DcMotor backLeftMotor = hardwareMap.get(DcMotor.class, "bl");
@@ -117,6 +114,9 @@ public class DriveTest extends LinearOpMode {
 
         CRServo collectServo = hardwareMap.get(CRServo.class, "collect");
 
+        boolean yButtonDown = false;
+        boolean slowMode = false;
+
         // Send telemetry message to signify robot waiting
         telemetry.addData(">", "Robot Ready.  Press Play.");    //
         telemetry.update();
@@ -126,12 +126,12 @@ public class DriveTest extends LinearOpMode {
 
         // Run until driver presses Stop
         while (opModeIsActive()) {
-            double leftStickX = gamepad1.left_stick_x;
-            double leftStickY = -gamepad1.left_stick_y;
-            double rightStickX = gamepad1.right_stick_x;
-            double rightStickY = -gamepad1.right_stick_y;
-            double rightTrigger = gamepad1.right_trigger;
-            double leftTrigger = gamepad1.left_trigger;
+            double leftStickX = gamepad1.left_stick_x; // turn
+            double leftStickY = -gamepad1.left_stick_y; // arm
+            double rightStickX = gamepad1.right_stick_x; // strafe
+            double rightStickY = -gamepad1.right_stick_y; // slide
+            double rightTrigger = gamepad1.right_trigger; // forward
+            double leftTrigger = gamepad1.left_trigger; // backward (both to brake)
             boolean rightBumper = gamepad1.right_bumper;
             boolean leftBumper = gamepad1.left_bumper;
             boolean dpad_up = gamepad1.dpad_up;
