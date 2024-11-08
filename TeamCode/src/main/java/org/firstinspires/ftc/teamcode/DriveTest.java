@@ -32,7 +32,6 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
-import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
 
@@ -104,20 +103,12 @@ public class DriveTest extends LinearOpMode {
         backRightMotor.setDirection(DcMotor.Direction.REVERSE);
 
         DcMotor armMotor = hardwareMap.get(DcMotor.class, "arm");
+        armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        // move slightly away from "zeroed" location
-        //        armMotor.setTargetPosition(10);
-        //        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        //        armMotor.setPower(0.5);
 
         DcMotor slideMotor = hardwareMap.get(DcMotor.class, "slide");
+        slideMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        // move slightly away from "zeroed" location
-        //        slideMotor.setTargetPosition(10);
-        //        slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        //        slideMotor.setPower(0.5);
 
         CRServo collectServo = hardwareMap.get(CRServo.class, "collect");
 
@@ -176,6 +167,7 @@ public class DriveTest extends LinearOpMode {
             } else {
                 armMotor.setTargetPosition(0);
             }
+            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             armMotor.setPower(armMotorPower);
 
             // slide motor out/in
@@ -185,6 +177,7 @@ public class DriveTest extends LinearOpMode {
             } else {
                 slideMotor.setTargetPosition(0);
             }
+            slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             slideMotor.setPower(slideMotorPower);
 
             // driving control
