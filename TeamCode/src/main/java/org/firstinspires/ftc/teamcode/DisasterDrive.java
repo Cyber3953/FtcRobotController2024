@@ -69,8 +69,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name = "DriveTest", group = "Robot")
-public class DriveTest extends LinearOpMode {
+@TeleOp(name = "DisasterDrive", group = "Robot")
+public class DisasterDrive extends LinearOpMode {
     private static final double LEFT_STICK_Y_DEAD_ZONE = 0.1;
     private static final double LEFT_STICK_X_DEAD_ZONE = 0.1;
     private static final double RIGHT_STICK_X_DEAD_ZONE = 0.1;
