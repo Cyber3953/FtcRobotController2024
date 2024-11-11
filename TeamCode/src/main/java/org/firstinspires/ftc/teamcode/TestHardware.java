@@ -1,16 +1,15 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
-import com.qualcomm.robotcore.hardware.NormalizedRGBA;
-import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 
-@TeleOp(name = "HardwareTest", group = "Robot")
-public class HardwareTest extends LinearOpMode {
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+
+@TeleOp(name = "TestHardware", group = "Robot")
+public class TestHardware extends LinearOpMode {
     @Override
     public void runOpMode() {
         waitForStart();
@@ -18,12 +17,12 @@ public class HardwareTest extends LinearOpMode {
         int selector = 0;
 
         // Initialize motors
-        DcMotor frontLeftMotor = hardwareMap.get(DcMotor.class, "fl");
-        DcMotor frontRightMotor = hardwareMap.get(DcMotor.class, "fr");
-        DcMotor backLeftMotor = hardwareMap.get(DcMotor.class, "bl");
-        DcMotor backRightMotor = hardwareMap.get(DcMotor.class, "br");
-        DcMotor armMotor = hardwareMap.get(DcMotor.class, "arm");
-        DcMotor slideMotor = hardwareMap.get(DcMotor.class, "slide");
+        DcMotorEx frontLeftMotor = hardwareMap.get(DcMotorEx.class, "fl");
+        DcMotorEx frontRightMotor = hardwareMap.get(DcMotorEx.class, "fr");
+        DcMotorEx backLeftMotor = hardwareMap.get(DcMotorEx.class, "bl");
+        DcMotorEx backRightMotor = hardwareMap.get(DcMotorEx.class, "br");
+        DcMotorEx armMotor = hardwareMap.get(DcMotorEx.class, "arm");
+        DcMotorEx slideMotor = hardwareMap.get(DcMotorEx.class, "slide");
 
         CRServo collectServo = hardwareMap.get(CRServo.class, "collect");
 //        Servo deliveryServo = hardwareMap.get(Servo.class, "Delivery");
@@ -44,6 +43,8 @@ public class HardwareTest extends LinearOpMode {
 
         boolean aButtonDown = false;
         boolean bButtonDown = false;
+        String selectedHardware = "";
+        DcMotorEx selectedMotor = null;
 
         while (opModeIsActive()) {
             double leftStickY = -gamepad1.left_stick_y;
@@ -67,64 +68,57 @@ public class HardwareTest extends LinearOpMode {
             }
             switch (selector) {
                 case 0:
-                    frontLeftMotor.setPower(leftStickY);
-                    telemetry.addData("Front left motor: ", "%.2f", leftStickY);
-                    telemetry.addData("Front left encoder", "%d", frontLeftMotor.getCurrentPosition());
+                    selectedHardware = "Front Left Motor";
+                    selectedMotor = frontLeftMotor;
                     break;
                 case 1:
-                    backRightMotor.setPower(leftStickY);
-                    telemetry.addData("Back right motor: ", "%.2f", leftStickY);
-                    telemetry.addData("Back right encoder", "%d", backRightMotor.getCurrentPosition());
+                    selectedHardware = "Back Right Motor";
+                    selectedMotor = backRightMotor;
                     break;
                 case 2:
-                    frontRightMotor.setPower(leftStickY);
-                    telemetry.addData("Front right motor: ", "%.2f", leftStickY);
-                    telemetry.addData("Front right encoder", "%d", frontRightMotor.getCurrentPosition());
+                    selectedHardware = "Front Right Motor";
+                    selectedMotor = frontRightMotor;
                     break;
                 case 3:
-                    backLeftMotor.setPower(leftStickY);
-                    telemetry.addData("Back left motor: ", "%.2f", leftStickY);
-                    telemetry.addData("Back left encoder", "%d", backLeftMotor.getCurrentPosition());
+                    selectedHardware = "Back Left Motor";
+                    selectedMotor = backLeftMotor;
                     break;
                 case 4:
-                    armMotor.setPower(leftStickY);
-                    telemetry.addData("Arm motor: ", "%.2f", leftStickY);
+                    selectedHardware = "Arm Motor";
+                    selectedMotor = backLeftMotor;
                     break;
                 case 5:
-                    slideMotor.setPower(leftStickY);
-                    telemetry.addData("Slide motor: ", "%.2f", leftStickY);
+                    selectedHardware = "Slide Motor";
+                    selectedMotor = slideMotor;
                     break;
                 case 6:
                     collectServo.setPower(leftStickY);
                     telemetry.addData("Collection servo: ", "%.2f", leftStickY);
                     break;
-//                case 8:
-//                    // this is not currently connected to the robot
-//                    //droneServo.setPosition(leftStickY);
-//                    telemetry.addData("Drone servo:", "%.2f", leftStickY);
-//                    break;
-//                case 9:
+//                case 7:
 //                    deliveryServo.setPosition(leftStickY);
 //                    telemetry.addData("Delivery servo: ", "%.2f", leftStickY);
 //                    break;
-//                case 10:
-//                    releaseServo.setPosition(leftStickY);
-//                    telemetry.addData("Release servo:", "%.2f", leftStickY);
-//                    break;
-//                case 11:
+//                case 8:
 //                    NormalizedRGBA colors = colorSensor.getNormalizedColors();
 //                    telemetry.addLine()
 //                            .addData("Red", "%.3f", colors.red)
 //                            .addData("Green", "%.3f", colors.green)
 //                            .addData("Blue", "%.3f", colors.blue);
 //                    break;
-//                case 12:
-//                    droneServo.setPosition(leftStickY);
-//                    telemetry.addData("Drone servo:", "%.2f", leftStickY);
                 default:
                     selector = 0;
                     break;
             }
+            if (selectedHardware.toLowerCase().contains("motor")) {
+                selectedMotor.setPower(leftStickY);
+                telemetry.addData(selectedHardware, "");
+                telemetry.addData("Power: ", "%.2f", selectedMotor.getPower());
+                telemetry.addData("Encoder: ", "%d", selectedMotor.getCurrentPosition());
+                telemetry.addData("Velocity: ", "%.2f", selectedMotor.getVelocity());
+                telemetry.addData("Current: ", "%.2f", selectedMotor.getCurrent(CurrentUnit.MILLIAMPS));
+            }
+
             telemetry.update();
         }
     }
