@@ -29,6 +29,8 @@ import com.acmerobotics.roadrunner.trajectory.constraints.MinVelocityConstraint;
 import com.acmerobotics.roadrunner.trajectory.constraints.ProfileAccelerationConstraint;
 import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryAccelerationConstraint;
 import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -40,6 +42,8 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequenceBuilder;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequenceRunner;
@@ -54,6 +58,23 @@ import java.util.List;
  */
 @Config
 public class SampleMecanumDrive extends MecanumDrive {
+
+    // lemonlight
+    static RevHubOrientationOnRobot.LogoFacingDirection[] logoFacingDirections
+            = RevHubOrientationOnRobot.LogoFacingDirection.values();
+    static RevHubOrientationOnRobot.UsbFacingDirection[] usbFacingDirections
+            = RevHubOrientationOnRobot.UsbFacingDirection.values();
+
+    static Limelight3A lemonlight = null;
+    private Pose3D botpose;
+    private YawPitchRollAngles orientation;
+    private Pose2d BotPose2D;
+    private Pose2d BotPose2dEst;
+    private Pose2d JohanIsNotSmart;
+
+    // end
+
+    public static DriveSignal signal;
     public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(0, 0, 0);
     public static PIDCoefficients HEADING_PID = new PIDCoefficients(0, 0, 0);
 
@@ -80,7 +101,16 @@ public class SampleMecanumDrive extends MecanumDrive {
     private List<Integer> lastEncVels = new ArrayList<>();
 
     public SampleMecanumDrive(HardwareMap hardwareMap) {
+
         super(kV, kA, kStatic, TRACK_WIDTH, TRACK_WIDTH, LATERAL_MULTIPLIER);
+
+        // lemonlight
+        lemonlight = hardwareMap.get(Limelight3A.class, "LemonLime");
+
+        lemonlight.start();
+        lemonlight.setPollRateHz(100);
+        lemonlight.pipelineSwitch(4);
+        // end
 
         follower = new HolonomicPIDVAFollower(TRANSLATIONAL_PID, TRANSLATIONAL_PID, HEADING_PID,
                 new Pose2d(0.5, 0.5, Math.toRadians(5.0)), 0.5);
@@ -95,9 +125,14 @@ public class SampleMecanumDrive extends MecanumDrive {
 
         // TODO: adjust the names of the following hardware devices to match your configuration
         imu = hardwareMap.get(IMU.class, "imu");
-        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
-                DriveConstants.LOGO_FACING_DIR, DriveConstants.USB_FACING_DIR));
-        imu.initialize(parameters);
+//        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
+//                DriveConstants.LOGO_FACING_DIR, DriveConstants.USB_FACING_DIR));
+//        imu.initialize(parameters);
+        // same exact thing as above, basically
+        RevHubOrientationOnRobot.LogoFacingDirection logo = logoFacingDirections[0];
+        RevHubOrientationOnRobot.UsbFacingDirection usb = usbFacingDirections[2];
+        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logo, usb);
+        imu.initialize(new IMU.Parameters(orientationOnRobot));
 
         frontLeft = hardwareMap.get(DcMotorEx.class, "fl");
         backLeft = hardwareMap.get(DcMotorEx.class, "bl");
@@ -197,8 +232,31 @@ public class SampleMecanumDrive extends MecanumDrive {
     }
 
     public void update() {
-        updatePoseEstimate();
-        DriveSignal signal = trajectorySequenceRunner.update(getPoseEstimate(), getPoseVelocity());
+
+        // reset it
+        botpose = null;
+
+        orientation = imu.getRobotYawPitchRollAngles();
+        lemonlight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
+
+        LLResult result = lemonlight.getLatestResult();
+        if (result != null && result.isValid())
+        {
+            botpose = result.getBotpose_MT2();
+            BotPose2D = new Pose2d(botpose.getPosition().x, botpose.getPosition().y, botpose.getOrientation().getYaw());
+
+        }
+
+        BotPose2dEst = getPoseEstimate();
+        if (botpose == null) {
+            signal = trajectorySequenceRunner.update(getPoseEstimate(), getPoseVelocity());
+        } else {
+            JohanIsNotSmart = new Pose2d(BotPose2D.getX() * 0.8 + BotPose2dEst.getX() * 0.2,
+                    BotPose2D.getY() * 0.8 + BotPose2dEst.getY() * 0.2,
+                    BotPose2D.getHeading() * 0.8 + BotPose2dEst.getHeading() * 0.2);
+            signal = trajectorySequenceRunner.update(JohanIsNotSmart, getPoseVelocity());
+        }
+
         if (signal != null) setDriveSignal(signal);
     }
 

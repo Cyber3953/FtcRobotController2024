@@ -43,7 +43,7 @@ public class lemonlight_op extends OpMode {
     // get yaw from imu for mt2
     orientation = imu.getRobotYawPitchRollAngles();
     lemonlight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
-    telemetry.addData("Yaw (Z)", "%.2f Deg. (Heading)", orientation.getYaw(AngleUnit.DEGREES));
+    telemetry.addData("Yaw (Z)", "%.2f Deg.", orientation.getYaw(AngleUnit.DEGREES));
 
     LLResult result = lemonlight.getLatestResult();
 
