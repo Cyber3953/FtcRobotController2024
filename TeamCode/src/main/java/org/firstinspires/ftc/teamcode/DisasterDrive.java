@@ -135,6 +135,7 @@ public class DisasterDrive extends LinearOpMode {
 
         boolean yButtonDown = false;
         boolean slowMode = false;
+        double strafePower = 0;
 
         // Run until driver presses Stop
         while (opModeIsActive()) {
@@ -195,42 +196,54 @@ public class DisasterDrive extends LinearOpMode {
 
             //Winch Control
             if (dpad_up) {
-                winchMotor.setPower(100.0);
+                slideMotor.setTargetPosition(5000);
+                winchMotor.setPower(1.0);
                 telemetry.addData("Winch Up", "");
             }
             if (dpad_down) {
-                winchMotor.setPower(-100.0);
+                slideMotor.setTargetPosition(0);
+                winchMotor.setPower(-1.0);
                 telemetry.addData("Winch down", "");
             }
 
             //Hang Control
             if (dpad_right) {
-                hangMotor.setPower(100.0);
+                slideMotor.setTargetPosition(5000);
+                hangMotor.setPower(1.0);
                 telemetry.addData("Hang Out", "");
             }
             if (dpad_left) {
-                hangMotor.setPower(-100.0);
+                slideMotor.setTargetPosition(-5000);
+                hangMotor.setPower(-1.0);
                 telemetry.addData("Hang In", "");
             }
 
             // driving control
-            double forwardPower = rightTrigger - leftTrigger;
-            if (rightTrigger > 0 && leftTrigger > 0) {
-                frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-                frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-                backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-                backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-                if (forwardPower < 0) {
-                    forwardPower = 0;
-                }
-            } else {
-                frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-            }
+            double forwardPower = leftStickY;
+//            if (rightTrigger > 0 && leftTrigger > 0) {
+//                frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//                frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//                backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//                backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//                if (forwardPower < 0) {
+//                    forwardPower = 0;
+//                }
+//            } else {
+//                frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+//                frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+//                backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+//                backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+//            }
             double turnPower = -adjustPower(leftStickX, LEFT_STICK_X_DEAD_ZONE);
-            double strafePower = adjustPower(rightStickX, RIGHT_STICK_X_DEAD_ZONE);
+
+            if (rightBumper && leftBumper) {
+                strafePower = 0;
+            } else if (rightBumper) {
+                strafePower = 1;
+            } else if (leftBumper) {
+                strafePower = -1;
+            }
+
             double denominator = Math.max(Math.abs(forwardPower) + Math.abs(strafePower) + Math.abs(turnPower), 1);
             if (slowMode) {
                 denominator /= SLOW_FACTOR;
