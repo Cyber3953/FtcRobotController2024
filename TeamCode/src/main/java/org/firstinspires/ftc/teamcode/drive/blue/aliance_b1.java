@@ -17,6 +17,13 @@ public class aliance_b1 extends LinearOpMode {
 
         waitForStart();
 
+        try {
+            drive.update();
+        }
+        catch (InterruptedException) {
+            telemetry.addData("no", 1);
+        }
+
         if (isStopRequested()) return;
 
         Trajectory traj = drive.trajectoryBuilder(new Pose2d())
@@ -26,8 +33,6 @@ public class aliance_b1 extends LinearOpMode {
         drive.followTrajectory(traj);
 
         sleep(100);
-
-        drive.update();
 
         drive.followTrajectory(
                 drive.trajectoryBuilder(traj.end(), true)
