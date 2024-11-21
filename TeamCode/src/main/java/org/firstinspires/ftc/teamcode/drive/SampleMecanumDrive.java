@@ -70,7 +70,7 @@ public class SampleMecanumDrive extends MecanumDrive {
     private YawPitchRollAngles orientation;
     private Pose2d BotPose2D;
     private Pose2d BotPose2dEst;
-    private Pose2d JohanIsNotSmart;
+    private Pose2d weightedPose;
 
     // end
 
@@ -236,28 +236,31 @@ public class SampleMecanumDrive extends MecanumDrive {
         // reset it
         botpose = null;
 
+        // get yaw and set it
         orientation = imu.getRobotYawPitchRollAngles();
         lemonlight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
 
+        // get lemonlight result and get botpose (mt2)
         LLResult result = lemonlight.getLatestResult();
-        if (result != null && result.isValid())
-        {
+        if (result != null && result.isValid()) {
             botpose = result.getBotpose_MT2();
             BotPose2D = new Pose2d(botpose.getPosition().x, botpose.getPosition().y, botpose.getOrientation().getYaw());
-
         }
 
+        // get botpose estimate and apply weights to location
         BotPose2dEst = getPoseEstimate();
         if (botpose == null) {
             signal = trajectorySequenceRunner.update(getPoseEstimate(), getPoseVelocity());
         } else {
-            JohanIsNotSmart = new Pose2d(BotPose2D.getX() * 0.8 + BotPose2dEst.getX() * 0.2,
+            weightedPose = new Pose2d(BotPose2D.getX() * 0.8 + BotPose2dEst.getX() * 0.2,
                     BotPose2D.getY() * 0.8 + BotPose2dEst.getY() * 0.2,
                     BotPose2D.getHeading() * 0.8 + BotPose2dEst.getHeading() * 0.2);
-            signal = trajectorySequenceRunner.update(JohanIsNotSmart, getPoseVelocity());
+            signal = trajectorySequenceRunner.update(weightedPose, getPoseVelocity());
         }
 
         if (signal != null) setDriveSignal(signal);
+
+
     }
 
     public void waitForIdle() {
