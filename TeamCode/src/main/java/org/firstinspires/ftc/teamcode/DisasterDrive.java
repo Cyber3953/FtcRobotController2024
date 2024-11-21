@@ -175,7 +175,7 @@ public class DisasterDrive extends LinearOpMode {
             }
 
             // arm motor raise/lower
-            double armMotorPower = adjustPower(leftStickY, LEFT_STICK_Y_DEAD_ZONE);
+            double armMotorPower = adjustPower(rightStickY, LEFT_STICK_Y_DEAD_ZONE);
             if (armMotorPower > 0) {
                 armMotor.setTargetPosition(ARM_MOTOR_LIMIT);
             } else {
@@ -186,22 +186,27 @@ public class DisasterDrive extends LinearOpMode {
 
             // slide motor out/in
             double slideMotorPower = adjustPower(rightStickY, LEFT_STICK_Y_DEAD_ZONE);
-            if (slideMotorPower > 0) {
+
+            if (rightTrigger > 0) {
                 slideMotor.setTargetPosition(SLIDE_MOTOR_LIMIT);
-            } else {
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                slideMotor.setPower(rightTrigger);
+            } if (leftTrigger > 0) {
                 slideMotor.setTargetPosition(0);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                slideMotor.setPower(-leftTrigger);
             }
-            slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            slideMotor.setPower(slideMotorPower);
 
             //Winch Control
             if (dpad_up) {
                 slideMotor.setTargetPosition(5000);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 winchMotor.setPower(1.0);
                 telemetry.addData("Winch Up", "");
             }
             if (dpad_down) {
                 slideMotor.setTargetPosition(0);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 winchMotor.setPower(-1.0);
                 telemetry.addData("Winch down", "");
             }
@@ -209,11 +214,13 @@ public class DisasterDrive extends LinearOpMode {
             //Hang Control
             if (dpad_right) {
                 slideMotor.setTargetPosition(5000);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 hangMotor.setPower(1.0);
                 telemetry.addData("Hang Out", "");
             }
             if (dpad_left) {
                 slideMotor.setTargetPosition(-5000);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 hangMotor.setPower(-1.0);
                 telemetry.addData("Hang In", "");
             }
