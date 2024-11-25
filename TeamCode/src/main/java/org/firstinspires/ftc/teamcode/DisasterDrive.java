@@ -143,18 +143,48 @@ public class DisasterDrive extends LinearOpMode {
             double leftStickY = -gamepad1.left_stick_y; // arm
             double rightStickX = gamepad1.right_stick_x; // strafe
             double rightStickY = -gamepad1.right_stick_y; // slide
-            double rightTrigger = gamepad1.right_trigger; // forward
             double leftTrigger = gamepad1.left_trigger; // backward (both to brake)
-            boolean rightBumper = gamepad1.right_bumper;
+            double rightTrigger = gamepad1.right_trigger; // forward
             boolean leftBumper = gamepad1.left_bumper;
+            boolean rightBumper = gamepad1.right_bumper;
             boolean dpad_up = gamepad1.dpad_up;
             boolean dpad_down = gamepad1.dpad_down;
-            boolean dpad_right = gamepad1.dpad_right;
             boolean dpad_left = gamepad1.dpad_left;
+            boolean dpad_right = gamepad1.dpad_right;
             boolean aButton = gamepad1.a; // collection in
             boolean bButton = gamepad1.b; // collection out
-            boolean yButton = gamepad1.y; // slow mode
             boolean xButton = gamepad1.x;
+            boolean yButton = gamepad1.y; // slow mode
+
+            // merge gamepad 2
+            if (Math.abs(gamepad2.left_stick_x) > 0.1) {
+                leftStickX = (leftStickX + gamepad2.left_stick_x) / 2;
+            }
+            if (Math.abs(gamepad2.left_stick_y) > 0.1) {
+                leftStickY = (leftStickY + -gamepad2.left_stick_y) / 2;
+            }
+            if (Math.abs(gamepad2.right_stick_y) > 0.1) {
+                rightStickX = (rightStickX + gamepad2.right_stick_x) / 2;
+            }
+            if (Math.abs(gamepad2.right_stick_y) > 0.1) {
+                rightStickY = (rightStickY + -gamepad2.right_stick_y) / 2;
+            }
+            if (gamepad2.left_trigger > 0) {
+                leftTrigger = (leftTrigger + gamepad2.left_trigger) /2;
+            }
+            if (gamepad2.right_trigger > 0) {
+                rightTrigger = (rightTrigger + gamepad2.right_trigger) / 2;
+            }
+            leftBumper = leftBumper || gamepad2.left_bumper;
+            rightBumper = rightBumper || gamepad2.right_bumper;
+            dpad_up = dpad_up || gamepad2.dpad_up;
+            dpad_down = dpad_down || gamepad2.dpad_down;
+            dpad_left = dpad_left || gamepad2.dpad_left;
+            dpad_right = dpad_right || gamepad2.dpad_right;
+            aButton = aButton || gamepad2.a;
+            bButton = bButton || gamepad2.b;
+            xButton = xButton || gamepad2.x;
+            yButton = yButton || gamepad2.y;
 
             // slow mode on & off
             if (yButton) {
@@ -191,7 +221,8 @@ public class DisasterDrive extends LinearOpMode {
                 slideMotor.setTargetPosition(SLIDE_MOTOR_LIMIT);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 slideMotor.setPower(rightTrigger);
-            } if (leftTrigger > 0) {
+            }
+            if (leftTrigger > 0) {
                 slideMotor.setTargetPosition(0);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 slideMotor.setPower(-leftTrigger);
