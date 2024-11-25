@@ -17,29 +17,32 @@ public class TestHardware extends LinearOpMode {
         int selector = 0;
 
         // Initialize motors
-        DcMotorEx frontLeftMotor = hardwareMap.get(DcMotorEx.class, "fl");
-        DcMotorEx frontRightMotor = hardwareMap.get(DcMotorEx.class, "fr");
-        DcMotorEx backLeftMotor = hardwareMap.get(DcMotorEx.class, "bl");
-        DcMotorEx backRightMotor = hardwareMap.get(DcMotorEx.class, "br");
-        DcMotorEx armMotor = hardwareMap.get(DcMotorEx.class, "arm");
-        DcMotorEx slideMotor = hardwareMap.get(DcMotorEx.class, "slide");
+        DcMotorEx frontLeftMotor = hardwareMap.get(DcMotorEx.class, "fl"); // motor 2
+        DcMotorEx frontRightMotor = hardwareMap.get(DcMotorEx.class, "fr"); // motor 3
+        DcMotorEx backLeftMotor = hardwareMap.get(DcMotorEx.class, "bl"); // motor 0
+        DcMotorEx backRightMotor = hardwareMap.get(DcMotorEx.class, "br"); // motor 1
+        DcMotorEx armMotorPrimary = hardwareMap.get(DcMotorEx.class, "arm"); // motor 0
+//        DcMotorEx armMotorSecondary = hardwareMap.get(DcMotorEx.class, "arm2");
+        DcMotorEx slideMotor = hardwareMap.get(DcMotorEx.class, "slide"); // motor 1
+        DcMotorEx winchMotor = hardwareMap.get(DcMotorEx.class, "winch"); // motor 2
+        DcMotorEx hangMotor = hardwareMap.get(DcMotorEx.class, "hang"); // motor 3
 
-        CRServo collectServo = hardwareMap.get(CRServo.class, "collect");
+        CRServo collectServo = hardwareMap.get(CRServo.class, "collect"); // servo 0
 //        Servo deliveryServo = hardwareMap.get(Servo.class, "Delivery");
-//        Servo releaseServo = hardwareMap.get(Servo.class, "Gate");
-//        Servo droneServo = hardwareMap.get(Servo.class, "Drone");
 //
 //        BNO055IMU imu = hardwareMap.get(BNO055IMU.class, "imu");
 //        NormalizedColorSensor colorSensor = hardwareMap.get(NormalizedColorSensor.class, "color");
 //
-//        frontRightMotor.setDirection(DcMotor.Direction.REVERSE);
-//        backRightMotor.setDirection(DcMotor.Direction.REVERSE);
-//
-//        frontLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//        frontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//        backLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//        backRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//        slideMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontRightMotor.setDirection(DcMotor.Direction.REVERSE);
+        backRightMotor.setDirection(DcMotor.Direction.REVERSE);
+        armMotorPrimary.setDirection(DcMotor.Direction.REVERSE);
+
+        frontLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        slideMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        armMotorPrimary.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         boolean aButtonDown = false;
         boolean bButtonDown = false;
@@ -64,7 +67,7 @@ public class TestHardware extends LinearOpMode {
             if (!bButton && bButtonDown) {
                 bButtonDown = false;
                 selector--;
-                if (selector == -1) selector = 6;
+                if (selector == -1) selector = 8;
             }
             switch (selector) {
                 case 0:
@@ -84,16 +87,34 @@ public class TestHardware extends LinearOpMode {
                     selectedMotor = backLeftMotor;
                     break;
                 case 4:
-                    selectedHardware = "Arm Motor";
-                    selectedMotor = backLeftMotor;
+                    selectedHardware = "Arm Worm Drive";
+                    selectedMotor = armMotorPrimary;
+
+                    armMotorPrimary.setPower(leftStickY);
+//                    armMotorSecondary.setPower(leftStickY);
+
+                    telemetry.addData(selectedHardware, "");
+                    telemetry.addData("Power: ", "%.2f", selectedMotor.getPower());
+                    telemetry.addData("Encoder: ", "%d", selectedMotor.getCurrentPosition());
+                    telemetry.addData("Velocity: ", "%.2f", selectedMotor.getVelocity());
+                    telemetry.addData("Current: ", "%.2f", selectedMotor.getCurrent(CurrentUnit.MILLIAMPS));
                     break;
                 case 5:
                     selectedHardware = "Slide Motor";
                     selectedMotor = slideMotor;
                     break;
                 case 6:
+                    selectedHardware = "Collection Servo";
                     collectServo.setPower(leftStickY);
                     telemetry.addData("Collection servo: ", "%.2f", leftStickY);
+                    break;
+                case 7:
+                    selectedHardware = "Winch Motor";
+                    selectedMotor = winchMotor;
+                    break;
+                case 8:
+                    selectedHardware = "Hang Motor";
+                    selectedMotor = hangMotor;
                     break;
 //                case 7:
 //                    deliveryServo.setPosition(leftStickY);

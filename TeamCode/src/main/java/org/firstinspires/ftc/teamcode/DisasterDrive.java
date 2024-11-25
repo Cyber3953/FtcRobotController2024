@@ -33,6 +33,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -77,7 +78,7 @@ public class DisasterDrive extends LinearOpMode {
     private static final double RIGHT_STICK_Y_DEAD_ZONE = 0.1;
     private static final double SLOW_FACTOR = .5; // halve the speed
     private static final int ARM_MOTOR_LIMIT = 5000;
-    private static final int SLIDE_MOTOR_LIMIT = 5000;
+    private static final int SLIDE_MOTOR_LIMIT = 13900;
 
     // Adjust power for a defined dead zone
     private double adjustPower(double power, double deadZone) {
@@ -99,16 +100,26 @@ public class DisasterDrive extends LinearOpMode {
         frontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         backLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         backRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        frontRightMotor.setDirection(DcMotor.Direction.REVERSE);
-        backRightMotor.setDirection(DcMotor.Direction.REVERSE);
+        frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
+        backLeftMotor.setDirection(DcMotor.Direction.REVERSE);
 
-        DcMotor armMotor = hardwareMap.get(DcMotor.class, "arm");
+        DcMotorEx armMotor = hardwareMap.get(DcMotorEx.class, "arm");
         armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armMotor.setDirection(DcMotor.Direction.REVERSE);
 
-        DcMotor slideMotor = hardwareMap.get(DcMotor.class, "slide");
+        DcMotorEx slideMotor = hardwareMap.get(DcMotorEx.class, "slide");
         slideMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        DcMotor winchMotor = hardwareMap.get(DcMotor.class, "winch"); // motor 2
+        winchMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        winchMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        winchMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        DcMotor hangMotor = hardwareMap.get(DcMotor.class, "hang"); // motor 3
+        hangMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        hangMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         CRServo collectServo = hardwareMap.get(CRServo.class, "collect");
 
@@ -124,6 +135,7 @@ public class DisasterDrive extends LinearOpMode {
 
         boolean yButtonDown = false;
         boolean slowMode = false;
+        double strafePower = 0;
 
         // Run until driver presses Stop
         while (opModeIsActive()) {
@@ -137,6 +149,8 @@ public class DisasterDrive extends LinearOpMode {
             boolean leftBumper = gamepad1.left_bumper;
             boolean dpad_up = gamepad1.dpad_up;
             boolean dpad_down = gamepad1.dpad_down;
+            boolean dpad_right = gamepad1.dpad_right;
+            boolean dpad_left = gamepad1.dpad_left;
             boolean aButton = gamepad1.a; // collection in
             boolean bButton = gamepad1.b; // collection out
             boolean yButton = gamepad1.y; // slow mode
@@ -161,7 +175,7 @@ public class DisasterDrive extends LinearOpMode {
             }
 
             // arm motor raise/lower
-            double armMotorPower = adjustPower(leftStickY, LEFT_STICK_Y_DEAD_ZONE);
+            double armMotorPower = adjustPower(rightStickY, LEFT_STICK_Y_DEAD_ZONE);
             if (armMotorPower > 0) {
                 armMotor.setTargetPosition(ARM_MOTOR_LIMIT);
             } else {
@@ -172,40 +186,79 @@ public class DisasterDrive extends LinearOpMode {
 
             // slide motor out/in
             double slideMotorPower = adjustPower(rightStickY, LEFT_STICK_Y_DEAD_ZONE);
-            if (slideMotorPower > 0) {
+
+            if (rightTrigger > 0) {
                 slideMotor.setTargetPosition(SLIDE_MOTOR_LIMIT);
-            } else {
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                slideMotor.setPower(rightTrigger);
+            } if (leftTrigger > 0) {
                 slideMotor.setTargetPosition(0);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                slideMotor.setPower(-leftTrigger);
             }
-            slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            slideMotor.setPower(slideMotorPower);
+
+            //Winch Control
+            if (dpad_up) {
+                slideMotor.setTargetPosition(5000);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                winchMotor.setPower(1.0);
+                telemetry.addData("Winch Up", "");
+            }
+            if (dpad_down) {
+                slideMotor.setTargetPosition(0);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                winchMotor.setPower(-1.0);
+                telemetry.addData("Winch down", "");
+            }
+
+            //Hang Control
+            if (dpad_right) {
+                slideMotor.setTargetPosition(5000);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                hangMotor.setPower(1.0);
+                telemetry.addData("Hang Out", "");
+            }
+            if (dpad_left) {
+                slideMotor.setTargetPosition(-5000);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                hangMotor.setPower(-1.0);
+                telemetry.addData("Hang In", "");
+            }
 
             // driving control
-            double forwardPower = rightTrigger - leftTrigger;
-            if (rightTrigger > 0 && leftTrigger > 0) {
-                frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-                frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-                backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-                backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-                if (forwardPower < 0) {
-                    forwardPower = 0;
-                }
-            } else {
-                frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-            }
+            double forwardPower = leftStickY;
+//            if (rightTrigger > 0 && leftTrigger > 0) {
+//                frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//                frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//                backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//                backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//                if (forwardPower < 0) {
+//                    forwardPower = 0;
+//                }
+//            } else {
+//                frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+//                frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+//                backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+//                backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+//            }
             double turnPower = -adjustPower(leftStickX, LEFT_STICK_X_DEAD_ZONE);
-            double strafePower = adjustPower(rightStickX, RIGHT_STICK_X_DEAD_ZONE);
+
+            if (rightBumper && leftBumper) {
+                strafePower = 0;
+            } else if (rightBumper) {
+                strafePower = 1;
+            } else if (leftBumper) {
+                strafePower = -1;
+            }
+
             double denominator = Math.max(Math.abs(forwardPower) + Math.abs(strafePower) + Math.abs(turnPower), 1);
             if (slowMode) {
                 denominator /= SLOW_FACTOR;
             }
-            double frontLeftPower = (forwardPower + strafePower + turnPower) / denominator;
-            double frontRightPower = (forwardPower - strafePower - turnPower) / denominator;
-            double backLeftPower = (forwardPower - strafePower + turnPower) / denominator;
-            double backRightPower = (forwardPower + strafePower - turnPower) / denominator;
+            double frontLeftPower = (forwardPower + strafePower - turnPower) / denominator;
+            double frontRightPower = (forwardPower - strafePower + turnPower) / denominator;
+            double backLeftPower = (forwardPower - strafePower - turnPower) / denominator;
+            double backRightPower = (forwardPower + strafePower + turnPower) / denominator;
             frontLeftMotor.setPower(frontLeftPower);
             backLeftMotor.setPower(backLeftPower);
             frontRightMotor.setPower(frontRightPower);
