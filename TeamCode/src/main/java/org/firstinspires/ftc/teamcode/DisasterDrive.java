@@ -77,7 +77,7 @@ public class DisasterDrive extends LinearOpMode {
     private static final double RIGHT_STICK_X_DEAD_ZONE = 0.1;
     private static final double RIGHT_STICK_Y_DEAD_ZONE = 0.1;
     private static final double SLOW_FACTOR = .5; // halve the speed
-    private static final int ARM_MOTOR_LIMIT = 5000;
+    private static final int ARM_MOTOR_LIMIT = 3884;
     private static final int SLIDE_MOTOR_LIMIT = 13900;
 
     // Adjust power for a defined dead zone
@@ -135,7 +135,6 @@ public class DisasterDrive extends LinearOpMode {
 
         boolean yButtonDown = false;
         boolean slowMode = false;
-        double strafePower = 0;
 
         // Run until driver presses Stop
         while (opModeIsActive()) {
@@ -157,24 +156,12 @@ public class DisasterDrive extends LinearOpMode {
             boolean yButton = gamepad1.y; // slow mode
 
             // merge gamepad 2
-            if (Math.abs(gamepad2.left_stick_x) > 0.1) {
-                leftStickX = (leftStickX + gamepad2.left_stick_x) / 2;
-            }
-            if (Math.abs(gamepad2.left_stick_y) > 0.1) {
-                leftStickY = (leftStickY + -gamepad2.left_stick_y) / 2;
-            }
-            if (Math.abs(gamepad2.right_stick_y) > 0.1) {
-                rightStickX = (rightStickX + gamepad2.right_stick_x) / 2;
-            }
-            if (Math.abs(gamepad2.right_stick_y) > 0.1) {
-                rightStickY = (rightStickY + -gamepad2.right_stick_y) / 2;
-            }
-            if (gamepad2.left_trigger > 0) {
-                leftTrigger = (leftTrigger + gamepad2.left_trigger) /2;
-            }
-            if (gamepad2.right_trigger > 0) {
-                rightTrigger = (rightTrigger + gamepad2.right_trigger) / 2;
-            }
+            leftStickX = Math.min(leftStickX + gamepad2.left_stick_x, 1);
+            leftStickY = Math.min(leftStickY + -gamepad2.left_stick_y, 1);
+            rightStickX = Math.min(rightStickX + gamepad2.right_stick_x, 1);
+            rightStickY = Math.min(rightStickY + -gamepad2.right_stick_y, 1);
+            leftTrigger = Math.min(leftTrigger + gamepad2.left_trigger, 1);
+            rightTrigger = Math.min(rightTrigger + gamepad2.right_trigger, 1);
             leftBumper = leftBumper || gamepad2.left_bumper;
             rightBumper = rightBumper || gamepad2.right_bumper;
             dpad_up = dpad_up || gamepad2.dpad_up;
@@ -217,8 +204,20 @@ public class DisasterDrive extends LinearOpMode {
             // slide motor out/in
             double slideMotorPower = adjustPower(rightStickY, LEFT_STICK_Y_DEAD_ZONE);
 
+            double maxAllowedInches = 40;
+            double ticksAtMaxAllowedLength = 9100;
+            double encoderAtHorizontal = 1071;
+            double encoderAtVertical = 3671;
+            double ninetyDegreeRange = encoderAtVertical - encoderAtHorizontal;
+            double angleDegrees = ((armMotor.getCurrentPosition() - encoderAtHorizontal) / ninetyDegreeRange) * 90;
+            double hypoLength = maxAllowedInches / Math.cos(angleDegrees * Math.PI / 180);
+            int limit = Math.min(SLIDE_MOTOR_LIMIT, (int) (hypoLength * (ticksAtMaxAllowedLength / maxAllowedInches)));
+
+            if (rightTrigger ==0 && leftTrigger == 0) {
+                slideMotor.setPower(0);
+            }
             if (rightTrigger > 0) {
-                slideMotor.setTargetPosition(SLIDE_MOTOR_LIMIT);
+                slideMotor.setTargetPosition(limit);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 slideMotor.setPower(rightTrigger);
             }
@@ -228,68 +227,75 @@ public class DisasterDrive extends LinearOpMode {
                 slideMotor.setPower(-leftTrigger);
             }
 
-            //Winch Control
+            // winch control
+            if (!dpad_up && !dpad_down) {
+                winchMotor.setPower(0);
+            }
             if (dpad_up) {
-                slideMotor.setTargetPosition(5000);
-                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                winchMotor.setTargetPosition(5000);
+                winchMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 winchMotor.setPower(1.0);
                 telemetry.addData("Winch Up", "");
             }
             if (dpad_down) {
-                slideMotor.setTargetPosition(0);
-                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                winchMotor.setTargetPosition(0);
+                winchMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 winchMotor.setPower(-1.0);
                 telemetry.addData("Winch down", "");
             }
 
-            //Hang Control
+            // hang control
+            if (!dpad_right && !dpad_left) {
+                hangMotor.setPower(0);
+            }
             if (dpad_right) {
-                slideMotor.setTargetPosition(5000);
-                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                hangMotor.setTargetPosition(5000);
+                hangMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 hangMotor.setPower(1.0);
                 telemetry.addData("Hang Out", "");
             }
             if (dpad_left) {
-                slideMotor.setTargetPosition(-5000);
-                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                hangMotor.setTargetPosition(-5000);
+                hangMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 hangMotor.setPower(-1.0);
                 telemetry.addData("Hang In", "");
             }
 
             // driving control
             double forwardPower = leftStickY;
-//            if (rightTrigger > 0 && leftTrigger > 0) {
-//                frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//                frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//                backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//                backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//                if (forwardPower < 0) {
-//                    forwardPower = 0;
-//                }
-//            } else {
-//                frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-//                frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-//                backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-//                backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-//            }
-            double turnPower = -adjustPower(leftStickX, LEFT_STICK_X_DEAD_ZONE);
-
-            if (rightBumper && leftBumper) {
-                strafePower = 0;
-            } else if (rightBumper) {
-                strafePower = 1;
+            double turnPower = -adjustPower(rightStickX, RIGHT_STICK_X_DEAD_ZONE);
+            double strafePower = -adjustPower(leftStickX, LEFT_STICK_X_DEAD_ZONE);
+            if (rightBumper) {
+                strafePower = 0.3;
             } else if (leftBumper) {
-                strafePower = -1;
+                strafePower = -0.3;
             }
 
             double denominator = Math.max(Math.abs(forwardPower) + Math.abs(strafePower) + Math.abs(turnPower), 1);
             if (slowMode) {
                 denominator /= SLOW_FACTOR;
             }
-            double frontLeftPower = (forwardPower + strafePower - turnPower) / denominator;
-            double frontRightPower = (forwardPower - strafePower + turnPower) / denominator;
-            double backLeftPower = (forwardPower - strafePower - turnPower) / denominator;
-            double backRightPower = (forwardPower + strafePower + turnPower) / denominator;
+            double frontLeftPower = (forwardPower - strafePower - turnPower) / denominator;
+            double frontRightPower = (forwardPower + strafePower + turnPower) / denominator;
+            double backLeftPower = (forwardPower + strafePower - turnPower) / denominator;
+            double backRightPower = (forwardPower - strafePower + turnPower) / denominator;
+            // hard brake!
+            if (leftBumper && rightBumper) {
+                frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                frontLeftPower = 0;
+                frontRightPower = 0;
+                backLeftPower = 0;
+                backRightPower = 0;
+            } else {
+                frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+                frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+                backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+                backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            }
+
             frontLeftMotor.setPower(frontLeftPower);
             backLeftMotor.setPower(backLeftPower);
             frontRightMotor.setPower(frontRightPower);
