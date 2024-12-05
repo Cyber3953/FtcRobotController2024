@@ -128,7 +128,7 @@ public class DisasterDrive extends LinearOpMode {
 
         double maxAllowedInches = 40;
         double armHeightInches = 13.5;
-        double ticksAtMaxAllowedLength = 9100;
+        double ticksAtMaxAllowedLength = 1200;
         double encoderAtHorizontal = 1071;
         double encoderAtVertical = 3671;
 //        ColorSensor colorSensor = hardwareMap.colorSensor.get("color_sensor");
