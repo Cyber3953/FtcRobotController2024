@@ -220,15 +220,21 @@ public class DisasterDrive extends LinearOpMode {
 //                double loweredLimit = armHeightInches/Math.sin((90+angleDegrees) * Math.PI / 180);
 //                limit = Math.min(limit, (int) (loweredLimit * (ticksAtMaxAllowedLength / maxAllowedInches)));
 //            }
+            if (rightTrigger == 0 && leftTrigger == 0) {
+                slideMotor.setPower(0);
+            }
 
             if (slideMotor.getCurrentPosition() > limit) {
                 slideMotor.setTargetPosition(limit);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 slideMotor.setPower(-1.0);
             }
-            if (rightTrigger == 0 && leftTrigger == 0 && slideMotor.getCurrentPosition() <= limit ) {
-                slideMotor.setPower(0);
+            if (angleDegrees > 90) {
+                slideMotor.setTargetPosition(0);
+                slideMotor.setPower(-1.0);
+
             }
+
             if (rightTrigger > 0) {
                 slideMotor.setTargetPosition(limit);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
