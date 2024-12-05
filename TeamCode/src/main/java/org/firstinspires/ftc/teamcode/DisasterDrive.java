@@ -126,11 +126,11 @@ public class DisasterDrive extends LinearOpMode {
 
         IMU imu = hardwareMap.get(IMU.class, "imu");
 
-        double maxAllowedInches = 40;
+        double maxAllowedInches = 38;
         double armHeightInches = 13.5;
         double ticksAtMaxAllowedLength = 1200;
-        double encoderAtHorizontal = 1071;
-        double encoderAtVertical = 3671;
+        double encoderAtHorizontal = 678;
+        double encoderAtVertical = 3181;
 //        ColorSensor colorSensor = hardwareMap.colorSensor.get("color_sensor");
 
         // Send telemetry message to signify robot waiting
