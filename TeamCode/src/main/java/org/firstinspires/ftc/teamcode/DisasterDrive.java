@@ -162,10 +162,12 @@ public class DisasterDrive extends LinearOpMode {
             boolean xButton = gamepad1.x;
             boolean yButton = gamepad1.y; // slow mode
 
-            // merge gamepad 2
-//            leftStickX = Math.min(leftStickX + gamepad2.left_stick_x, 1);
-//            leftStickY = Math.min(leftStickY + -gamepad2.left_stick_y, 1);
-//            rightStickX = Math.min(rightStickX + gamepad2.right_stick_x, 1);
+            double slowPlayerTwo = 0.333;
+
+            leftStickX = Math.min(leftStickX + gamepad2.left_stick_x * slowPlayerTwo, 1);
+            leftStickY = Math.min(leftStickY + -gamepad2.left_stick_y * slowPlayerTwo, 1);
+            rightStickX = Math.min(rightStickX + gamepad2.right_stick_x * slowPlayerTwo, 1);
+
             rightStickY = Math.min(rightStickY + -gamepad2.right_stick_y, 1);
             leftTrigger = Math.min(leftTrigger + gamepad2.left_trigger, 1);
             rightTrigger = Math.min(rightTrigger + gamepad2.right_trigger, 1);
@@ -184,6 +186,7 @@ public class DisasterDrive extends LinearOpMode {
             if (yButton) {
                 yButtonDown = true;
             }
+
             if (!yButton && yButtonDown) {
                 yButtonDown = false;
                 slowMode = !slowMode;
@@ -301,7 +304,7 @@ public class DisasterDrive extends LinearOpMode {
             double backLeftPower = (forwardPower + strafePower - turnPower) / denominator;
             double backRightPower = (forwardPower - strafePower + turnPower) / denominator;
             // hard brake!
-            if (leftBumper && rightBumper) {
+            if (xButton) {
                 frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
                 frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
                 backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
