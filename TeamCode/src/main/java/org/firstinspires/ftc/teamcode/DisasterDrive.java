@@ -78,7 +78,8 @@ public class DisasterDrive extends LinearOpMode {
     private static final double RIGHT_STICK_Y_DEAD_ZONE = 0.1;
     private static final double SLOW_FACTOR = .5; // halve the speed
     private static final int ARM_MOTOR_LIMIT = 3884;
-    private static final int SLIDE_MOTOR_LIMIT = 13900;
+    private static final int SLIDE_MOTOR_LIMIT = 1900;
+
 
     // Adjust power for a defined dead zone
     private double adjustPower(double power, double deadZone) {
@@ -124,6 +125,12 @@ public class DisasterDrive extends LinearOpMode {
         CRServo collectServo = hardwareMap.get(CRServo.class, "collect");
 
         IMU imu = hardwareMap.get(IMU.class, "imu");
+
+        double maxAllowedInches = 38;
+        double armHeightInches = 13.5;
+        double ticksAtMaxAllowedLength = 1200;
+        double encoderAtHorizontal = 678;
+        double encoderAtVertical = 3181;
 //        ColorSensor colorSensor = hardwareMap.colorSensor.get("color_sensor");
 
         // Send telemetry message to signify robot waiting
@@ -156,9 +163,9 @@ public class DisasterDrive extends LinearOpMode {
             boolean yButton = gamepad1.y; // slow mode
 
             // merge gamepad 2
-            leftStickX = Math.min(leftStickX + gamepad2.left_stick_x, 1);
-            leftStickY = Math.min(leftStickY + -gamepad2.left_stick_y, 1);
-            rightStickX = Math.min(rightStickX + gamepad2.right_stick_x, 1);
+//            leftStickX = Math.min(leftStickX + gamepad2.left_stick_x, 1);
+//            leftStickY = Math.min(leftStickY + -gamepad2.left_stick_y, 1);
+//            rightStickX = Math.min(rightStickX + gamepad2.right_stick_x, 1);
             rightStickY = Math.min(rightStickY + -gamepad2.right_stick_y, 1);
             leftTrigger = Math.min(leftTrigger + gamepad2.left_trigger, 1);
             rightTrigger = Math.min(rightTrigger + gamepad2.right_trigger, 1);
@@ -184,9 +191,9 @@ public class DisasterDrive extends LinearOpMode {
 
             // collection motor intake/outtake
             if (aButton) {
-                collectServo.setPower(-1.0);
-            } else if (bButton) {
                 collectServo.setPower(1.0);
+            } else if (bButton) {
+                collectServo.setPower(-1.0);
             } else {
                 collectServo.setPower(0.0);
             }
@@ -204,18 +211,30 @@ public class DisasterDrive extends LinearOpMode {
             // slide motor out/in
             double slideMotorPower = adjustPower(rightStickY, LEFT_STICK_Y_DEAD_ZONE);
 
-            double maxAllowedInches = 40;
-            double ticksAtMaxAllowedLength = 9100;
-            double encoderAtHorizontal = 1071;
-            double encoderAtVertical = 3671;
             double ninetyDegreeRange = encoderAtVertical - encoderAtHorizontal;
             double angleDegrees = ((armMotor.getCurrentPosition() - encoderAtHorizontal) / ninetyDegreeRange) * 90;
-            double hypoLength = maxAllowedInches / Math.cos(angleDegrees * Math.PI / 180);
-            int limit = Math.min(SLIDE_MOTOR_LIMIT, (int) (hypoLength * (ticksAtMaxAllowedLength / maxAllowedInches)));
+            double raiseLimit = maxAllowedInches / Math.cos(angleDegrees * Math.PI / 180);
 
-            if (rightTrigger ==0 && leftTrigger == 0) {
+            int limit = Math.min(SLIDE_MOTOR_LIMIT, (int) (raiseLimit * (ticksAtMaxAllowedLength / maxAllowedInches)));
+//            if (angleDegrees < 0) {
+//                double loweredLimit = armHeightInches/Math.sin((90+angleDegrees) * Math.PI / 180);
+//                limit = Math.min(limit, (int) (loweredLimit * (ticksAtMaxAllowedLength / maxAllowedInches)));
+//            }
+            if (rightTrigger == 0 && leftTrigger == 0) {
                 slideMotor.setPower(0);
             }
+
+            if (slideMotor.getCurrentPosition() > limit) {
+                slideMotor.setTargetPosition(limit);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                slideMotor.setPower(-1.0);
+            }
+            if (angleDegrees > 90) {
+                slideMotor.setTargetPosition(0);
+                slideMotor.setPower(-1.0);
+
+            }
+
             if (rightTrigger > 0) {
                 slideMotor.setTargetPosition(limit);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -226,6 +245,8 @@ public class DisasterDrive extends LinearOpMode {
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 slideMotor.setPower(-leftTrigger);
             }
+
+
 
             // winch control
             if (!dpad_up && !dpad_down) {
@@ -249,13 +270,13 @@ public class DisasterDrive extends LinearOpMode {
                 hangMotor.setPower(0);
             }
             if (dpad_right) {
-                hangMotor.setTargetPosition(5000);
+                hangMotor.setTargetPosition(0);
                 hangMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 hangMotor.setPower(1.0);
                 telemetry.addData("Hang Out", "");
             }
             if (dpad_left) {
-                hangMotor.setTargetPosition(-5000);
+                hangMotor.setTargetPosition(-10300);
                 hangMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 hangMotor.setPower(-1.0);
                 telemetry.addData("Hang In", "");
@@ -305,6 +326,8 @@ public class DisasterDrive extends LinearOpMode {
             telemetry.addData("Arm Encoder", "%d", armMotor.getCurrentPosition());
             telemetry.addData("Slide Power", "%.2f", slideMotorPower);
             telemetry.addData("Slide Encoder", "%d", slideMotor.getCurrentPosition());
+            telemetry.addData("Slide Limit", "%d", limit);
+            telemetry.addData("Angle Degrees","%.2f", angleDegrees );
             telemetry.addData("Slow Mode: ", "%b", slowMode);
             Orientation orientation = imu.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
             telemetry.addData("Heading", " %.1f", orientation.firstAngle * 180.0 / Math.PI);
