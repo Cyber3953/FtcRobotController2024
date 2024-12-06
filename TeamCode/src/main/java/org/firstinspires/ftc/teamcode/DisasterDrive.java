@@ -78,7 +78,7 @@ public class DisasterDrive extends LinearOpMode {
     private static final double RIGHT_STICK_Y_DEAD_ZONE = 0.1;
     private static final double SLOW_FACTOR = .5; // halve the speed
     private static final int ARM_MOTOR_LIMIT = 3884;
-    private static final int SLIDE_MOTOR_LIMIT = 13900;
+    private static final int SLIDE_MOTOR_LIMIT = 1900;
 
 
     // Adjust power for a defined dead zone
