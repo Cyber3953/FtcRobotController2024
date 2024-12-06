@@ -259,8 +259,6 @@ public class SampleMecanumDrive extends MecanumDrive {
         }
 
         if (signal != null) setDriveSignal(signal);
-
-
     }
 
     public void waitForIdle() {
