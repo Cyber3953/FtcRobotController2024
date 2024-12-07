@@ -258,6 +258,8 @@ public class SampleMecanumDrive extends MecanumDrive {
             signal = trajectorySequenceRunner.update(weightedPose, getPoseVelocity());
         }
 
+        signal = trajectorySequenceRunner.update(getPoseEstimate(), getPoseVelocity());
+
         if (signal != null) setDriveSignal(signal);
     }
 
