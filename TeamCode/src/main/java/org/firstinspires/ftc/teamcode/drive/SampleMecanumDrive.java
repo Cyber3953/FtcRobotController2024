@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.drive;
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
 import static org.firstinspires.ftc.teamcode.drive.DriveConstants.MAX_ACCEL;
 import static org.firstinspires.ftc.teamcode.drive.DriveConstants.MAX_ANG_ACCEL;
 import static org.firstinspires.ftc.teamcode.drive.DriveConstants.MAX_ANG_VEL;
@@ -157,8 +158,8 @@ public class SampleMecanumDrive extends MecanumDrive {
             setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, MOTOR_VELO_PID);
         }
 
-        frontRight.setDirection(DcMotor.Direction.REVERSE);
-        backRight.setDirection(DcMotor.Direction.REVERSE);
+        frontLeft.setDirection(DcMotor.Direction.REVERSE);
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
 
         List<Integer> lastTrackingEncPositions = new ArrayList<>();
         List<Integer> lastTrackingEncVels = new ArrayList<>();
@@ -251,12 +252,25 @@ public class SampleMecanumDrive extends MecanumDrive {
         BotPose2dEst = getPoseEstimate();
         if (botpose == null) {
             signal = trajectorySequenceRunner.update(getPoseEstimate(), getPoseVelocity());
+
+//            telemetry.addData("x (est)", BotPose2dEst.getX());
+//            telemetry.addData("y (est)", BotPose2dEst.getY());
+//            telemetry.addData("heading (est)", BotPose2dEst.getHeading());
         } else {
             weightedPose = new Pose2d(BotPose2D.getX() * 0.8 + BotPose2dEst.getX() * 0.2,
                     BotPose2D.getY() * 0.8 + BotPose2dEst.getY() * 0.2,
                     BotPose2D.getHeading() * 0.8 + BotPose2dEst.getHeading() * 0.2);
             signal = trajectorySequenceRunner.update(weightedPose, getPoseVelocity());
+
+//            telemetry.addData("x (est)", BotPose2dEst.getX());
+//            telemetry.addData("y (est)", BotPose2dEst.getY());
+//            telemetry.addData("heading (est)", BotPose2dEst.getHeading());
+//            telemetry.addData("x (camera)", BotPose2D.getX());
+//            telemetry.addData("y (camera)", BotPose2D.getY());
+//            telemetry.addData("heading (camera)", BotPose2D.getHeading());
         }
+
+//        telemetry.update();
 
         if (signal != null) setDriveSignal(signal);
     }
