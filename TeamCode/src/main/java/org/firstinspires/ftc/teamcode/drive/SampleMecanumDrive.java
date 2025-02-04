@@ -271,9 +271,12 @@ public class SampleMecanumDrive extends MecanumDrive {
 //        }
 //
 ////        telemetry.update();
-        signal = trajectorySequenceRunner.update(getPoseEstimate(), getPoseVelocity());
-
+        updatePoseEstimate();
+        DriveSignal signal = trajectorySequenceRunner.update(getPoseEstimate(), getPoseVelocity());
         if (signal != null) setDriveSignal(signal);
+        
+        // signal = trajectorySequenceRunner.update(getPoseEstimate(), getPoseVelocity());
+        // if (signal != null) setDriveSignal(signal);
     }
 
     public void waitForIdle() {
