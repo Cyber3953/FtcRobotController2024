@@ -101,7 +101,7 @@ public class blue_right extends LinearOpMode {
         drive.followTrajectory(specificForwards);
 
         collectServo.setPower(-0.75);
-        sleep(3000);
+        sleep(2000);
         collectServo.setPower(0);
 
         drive.followTrajectory(moveBackwardsSlightly);
@@ -109,11 +109,14 @@ public class blue_right extends LinearOpMode {
         // reset it
 
         slideMotor.setTargetPosition(0);
-        slideMotor.setPower(0.9);
+        slideMotor.setPower(1);
         while (slideMotor.isBusy()) { telemetry.addData("slide going down", true); telemetry.update(); }
 
         armMotor.setTargetPosition(0);
-        armMotor.setPower(0.9);
+        armMotor.setPower(1);
+
+        // go to far left (right) specimen
+
 
         // unturn and move towards parking location
 
