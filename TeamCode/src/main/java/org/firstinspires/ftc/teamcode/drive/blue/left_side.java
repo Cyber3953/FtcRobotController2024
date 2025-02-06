@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.drive.blue;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -11,7 +12,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 
 @Autonomous(group = "drive", name = "blue_left")
-public class blue_left extends LinearOpMode {
+public class left_side extends LinearOpMode {
 
     /*
      calibrate everything when the claw is placed back on
@@ -71,6 +72,9 @@ public class blue_left extends LinearOpMode {
         Trajectory specificForwards = drive.trajectoryBuilder(new Pose2d())
                 .forward(TILE_SIZE * 0.45)
                 .build();
+//        Trajectory first_spline = drive.trajectoryBuilder(new Pose2d())
+//                .splineToConstantHeading(new Vector2d(10, 10), Math.toRadians(0))
+//                .build();
 
         // extend arm and drop game element
 

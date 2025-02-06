@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.drive.red;
+package org.firstinspires.ftc.teamcode.drive.blue;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
@@ -10,19 +10,17 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 
-@Autonomous(group = "drive", name = "DONTTOUCH")
-public class DONTTOUCH extends LinearOpMode {
+@Autonomous(group = "drive", name = "blue_right")
+public class right_side extends LinearOpMode {
 
     /*
-    * arm encoder; 2495
-    * slide encoder: 1885 (limit: 1900)
-    * angle degrees: 65.33
-    * */
-    DcMotor armMotor = null;
+     calibrate everything when the claw is placed back on
+     try to learn dx, dy values fro the limelight and degrees? and put in a formula?
+     */
+    final private double TILE_SIZE = 48;
+    DcMotorEx armMotor = null;
     DcMotorEx slideMotor = null;
     CRServo collectServo = null;
-    // have to set a time for this one
-    final private double TILE_SIZE = 48;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -46,51 +44,64 @@ public class DONTTOUCH extends LinearOpMode {
         // end
 
         waitForStart();
+        // YOU MUST CALL THIS BEFORE TRAJECTORY GO STARTS
         drive.update();
-
         if (isStopRequested()) return;
 
         double difference = 100 * Math.abs(hardwareMap.voltageSensor.iterator().next().getVoltage() - 15.00) / 15.00;
 
-        telemetry.addData("voltage error %", difference);
-        if (difference > 10)
+        telemetry.addData("voltage error (norm. lvl is 15%) %", difference);
+        if (difference > 21)
         {
             telemetry.addData("Please change battery", true);
         }
-        else if (difference > 7)
+        else if (difference > 17)
         {
             telemetry.addData("Change battery soon", true);
         }
+
         telemetry.update();
 
         Trajectory moveForward = drive.trajectoryBuilder(new Pose2d())
                 .forward(TILE_SIZE * 2)
                 .build();
+        Trajectory moveForwardToLeft = drive.trajectoryBuilder(new Pose2d())
+                .forward(TILE_SIZE * 3)
+                .build();
         Trajectory moveBackwardsSlightly = drive.trajectoryBuilder(new Pose2d())
-                .back(TILE_SIZE / 7)
+                .back(TILE_SIZE * 0.7)
                 .build();
         Trajectory specificForwards = drive.trajectoryBuilder(new Pose2d())
-                .forward(TILE_SIZE * 0.3)
+                .forward(TILE_SIZE * 0.45)
                 .build();
 
         // extend arm and drop game element
+        /*
+        FOR NEXT TIME
+        ADD THIS FOR THE RED AUTO AS WELL, (or just merge it)
+        still have to calibrate robot s
+         */
 
-        drive.turn(Math.toRadians(-10));
+        drive.followTrajectory(moveForwardToLeft);
 
-        armMotor.setTargetPosition(2650); // 2450
+        drive.turn(Math.toRadians(30));
+
+        armMotor.setTargetPosition(2630); // 2450
         armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armMotor.setPower(0.9);
-        sleep(1500);
+        armMotor.setPower(1);
+        while (armMotor.isBusy()) { telemetry.addData("arm going up", true); telemetry.update(); }
+        sleep(100); // just some delay
 
-        slideMotor.setTargetPosition(1820);
+        slideMotor.setTargetPosition(1770);
         slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        slideMotor.setPower(0.9);
-        sleep(1500);
+        slideMotor.setPower(1);
+        while (slideMotor.isBusy()) { telemetry.addData("slide going up", true); telemetry.update(); }
+        sleep(100); // just some delay
 
         drive.followTrajectory(specificForwards);
 
-        collectServo.setPower(-1);
-        sleep(3000);
+        collectServo.setPower(-0.75);
+        sleep(2000);
         collectServo.setPower(0);
 
         drive.followTrajectory(moveBackwardsSlightly);
@@ -98,11 +109,14 @@ public class DONTTOUCH extends LinearOpMode {
         // reset it
 
         slideMotor.setTargetPosition(0);
-        slideMotor.setPower(0.9);
-        sleep(1725);
+        slideMotor.setPower(1);
+        while (slideMotor.isBusy()) { telemetry.addData("slide going down", true); telemetry.update(); }
 
         armMotor.setTargetPosition(0);
-        armMotor.setPower(0.9);
+        armMotor.setPower(1);
+
+        // go to far left (right) specimen
+
 
         // unturn and move towards parking location
 
@@ -111,5 +125,6 @@ public class DONTTOUCH extends LinearOpMode {
         drive.turn(Math.toRadians(-111)); // turn 45 deg clockwise
         drive.followTrajectory(moveForward);
         drive.followTrajectory(moveForward);
+
     }
 }
