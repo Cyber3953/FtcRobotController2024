@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 
-@Autonomous(group = "drive", name = "blue_right")
+@Autonomous(group = "drive", name = "right_side")
 public class right_side extends LinearOpMode {
 
     /*

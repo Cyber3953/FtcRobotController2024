@@ -40,7 +40,7 @@ public class interesting extends LinearOpMode {
 
         drive.followTrajectory(
                 drive.trajectoryBuilder(my_traj.end(), true)
-                .splineTo(new Vector2d(0,0), 0)
+                .splineTo(new Vector2d(0,0), Math.toRadians(180))
                 .build());
 
     }

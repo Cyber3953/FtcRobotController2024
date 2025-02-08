@@ -11,8 +11,8 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 
-@Autonomous(group = "drive", name = "left_side_blue")
-public class left_side extends LinearOpMode {
+@Autonomous(group = "drive", name = "left_side_red")
+public class left_side_red extends LinearOpMode {
 
     /*
      calibrate everything when the claw is placed back on
@@ -27,7 +27,7 @@ public class left_side extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 
-        Pose2d startPose = new Pose2d(24, -24, Math.toRadians(0));
+        Pose2d startPose = new Pose2d(54, 36, Math.toRadians(0));
 
         drive.setPoseEstimate(startPose);
 
@@ -63,58 +63,41 @@ public class left_side extends LinearOpMode {
 
         telemetry.update();
 
-        Trajectory moveForward = drive.trajectoryBuilder(new Pose2d())
-                .forward(TILE_SIZE * 2)
+        // math.toradians(180) is arbitary
+        Trajectory foo1 = drive.trajectoryBuilder(startPose, Math.toRadians(180))
+                .splineToConstantHeading(new Vector2d(-20, 12), Math.toRadians(90))
+                .addTemporalMarker(1, () -> {
+                    armMotor.setTargetPosition(2620); // 2450
+                    armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    armMotor.setPower(1);
+                    while (armMotor.isBusy()) { telemetry.addData("arm going up", true); telemetry.update(); }
+
+                    slideMotor.setTargetPosition(1760);
+                    slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    slideMotor.setPower(1);
+                    while (slideMotor.isBusy()) { telemetry.addData("slide going up", true); telemetry.update(); }
+                })
                 .build();
-        Trajectory moveBackwardsSlightly = drive.trajectoryBuilder(new Pose2d())
-                .back(TILE_SIZE * 0.7)
+
+        Trajectory foo2 = drive.trajectoryBuilder(foo1.end(), false)
+                .splineTo(new Vector2d(-18, 14), Math.toRadians(90))
+                .addTemporalMarker(0.1, () -> {
+                    // arbitary number
+                    slideMotor.setTargetPosition(100);
+                    slideMotor.setPower(1);
+                    while (slideMotor.isBusy()) { telemetry.addData("slide going down", true); telemetry.update(); }
+                    sleep(100); // just some delay
+
+                    // arbitary number
+                    armMotor.setTargetPosition(100);
+                    armMotor.setPower(1);
+                    while (armMotor.isBusy()) { telemetry.addData("arm going down", true); telemetry.update(); }
+                })
                 .build();
-        Trajectory specificForwards = drive.trajectoryBuilder(new Pose2d())
-                .forward(TILE_SIZE * 0.45)
-                .build();
-//        Trajectory first_spline = drive.trajectoryBuilder(new Pose2d())
-//                .splineToConstantHeading(new Vector2d(10, 10), Math.toRadians(0))
-//                .build();
-
-        // extend arm and drop game element
-
-        drive.turn(Math.toRadians(-10));
-
-        armMotor.setTargetPosition(2620); // 2450
-        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armMotor.setPower(1);
-        while (armMotor.isBusy()) { telemetry.addData("arm going up", true); telemetry.update(); }
-
-        slideMotor.setTargetPosition(1760);
-        slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        slideMotor.setPower(1);
-        while (slideMotor.isBusy()) { telemetry.addData("slide going up", true); telemetry.update(); }
-        sleep(100); // just some delay
-
-        drive.followTrajectory(specificForwards);
-
-        collectServo.setPower(-0.75);
-        sleep(3000);
-        collectServo.setPower(0);
-
-        drive.followTrajectory(moveBackwardsSlightly);
-
-        // reset it
-
-        slideMotor.setTargetPosition(0);
-        slideMotor.setPower(0.9);
-        while (slideMotor.isBusy()) { telemetry.addData("slide going down", true); telemetry.update(); }
-
-        armMotor.setTargetPosition(0);
-        armMotor.setPower(0.9);
-
-        // unturn and move towards parking location
-
-        drive.turn(Math.toRadians(-176)); // turn 90 deg clockwise
-        drive.followTrajectory(moveForward);
-        drive.turn(Math.toRadians(-111)); // turn 45 deg clockwise
-        drive.followTrajectory(moveForward);
-        drive.followTrajectory(moveForward);
+//
+//        drive.followTrajectory(foo1);
+//        sleep(100);
+//        drive.followTrajectory(foo2);
 
     }
 }
