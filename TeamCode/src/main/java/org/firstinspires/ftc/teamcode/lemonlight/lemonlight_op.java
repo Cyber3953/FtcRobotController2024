@@ -10,64 +10,26 @@ import com.qualcomm.robotcore.hardware.IMU;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 
-@TeleOp(name = "lemonlight")
-public class lemonlight_op extends OpMode {
+@TeleOp(name = "lemonlight_test")
+public class lemonlight_op extends LinearOpMode {
 
-  static RevHubOrientationOnRobot.LogoFacingDirection[] logoFacingDirections
-          = RevHubOrientationOnRobot.LogoFacingDirection.values();
-  static RevHubOrientationOnRobot.UsbFacingDirection[] usbFacingDirections
-          = RevHubOrientationOnRobot.UsbFacingDirection.values();
-
-  private Limelight3A lemonlight = null;
-  private Pose3D botpose;
-  private YawPitchRollAngles orientation;
-  private IMU imu;
+  Pose2d startPose = new Pose2d(61, 36, Math.toRadians(0));
 
   @Override
-  public void init()
-  {
-    lemonlight = hardwareMap.get(Limelight3A.class, "LemonLime");
-    imu = hardwareMap.get(IMU.class, "imu");
+  public void runOpMode() {
 
-    updateOrientation();
-    
-    lemonlight.start();
-    lemonlight.setPollRateHz(100);
-    lemonlight.pipelineSwitch(4);
-  }
+    SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
+    drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    drive.setPoseEstimate(startPose);
 
-  @Override
-  public void loop()
-  {
-    // get yaw from imu for mt2
-    orientation = imu.getRobotYawPitchRollAngles();
-    lemonlight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
-    telemetry.addData("Yaw (Z)", "%.2f Deg.", orientation.getYaw(AngleUnit.DEGREES));
+    waitForStart();
 
-    LLResult result = lemonlight.getLatestResult();
-
-    if (result != null && result.isValid())
+    while (!isStopRequested)
     {
-      botpose = result.getBotpose_MT2();
-      telemetry.addData("tx", result.getTx());
-      telemetry.addData("ty", result.getTy());
-
-      if (botpose != null) {
-        double x = botpose.getPosition().x;
-        double y = botpose.getPosition().y;
-        telemetry.addData("MT2 Location", "(" + x + ", " + y + ")");
-      }
+      drive.update();
     }
-    // calibrate x & y axis after limelight is placed on robot
   }
-
-  void updateOrientation() {
-    RevHubOrientationOnRobot.LogoFacingDirection logo = logoFacingDirections[0];
-    RevHubOrientationOnRobot.UsbFacingDirection usb = usbFacingDirections[2];
-    RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logo, usb);
-    imu.initialize(new IMU.Parameters(orientationOnRobot));
-  }
-
 }
 

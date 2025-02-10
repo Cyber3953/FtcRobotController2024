@@ -27,7 +27,7 @@ public class left_side_red extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 
-        Pose2d startPose = new Pose2d(54, 36, Math.toRadians(0));
+        Pose2d startPose = new Pose2d(61, 36, Math.toRadians(0));
 
         drive.setPoseEstimate(startPose);
 
@@ -46,6 +46,7 @@ public class left_side_red extends LinearOpMode {
 
         waitForStart();
         // YOU MUST CALL THIS BEFORE TRAJECTORY GO STARTS
+        
         drive.update();
         if (isStopRequested()) return;
 
@@ -64,8 +65,8 @@ public class left_side_red extends LinearOpMode {
         telemetry.update();
 
         // math.toradians(180) is arbitary
-        Trajectory foo1 = drive.trajectoryBuilder(startPose, Math.toRadians(180))
-                .splineToConstantHeading(new Vector2d(-20, 12), Math.toRadians(90))
+        Trajectory foo1 = drive.trajectoryBuilder(startPose)
+                .splineToLinearHeading(new Vector2d(-20, 12), Math.toRadians(90))
                 .addTemporalMarker(1, () -> {
                     armMotor.setTargetPosition(2620); // 2450
                     armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -80,7 +81,7 @@ public class left_side_red extends LinearOpMode {
                 .build();
 
         Trajectory foo2 = drive.trajectoryBuilder(foo1.end(), false)
-                .splineTo(new Vector2d(-18, 14), Math.toRadians(90))
+                .splineToLinearHeading(new Vector2d(-18, 14), Math.toRadians(90))
                 .addTemporalMarker(0.1, () -> {
                     // arbitary number
                     slideMotor.setTargetPosition(100);
@@ -94,10 +95,10 @@ public class left_side_red extends LinearOpMode {
                     while (armMotor.isBusy()) { telemetry.addData("arm going down", true); telemetry.update(); }
                 })
                 .build();
-//
-//        drive.followTrajectory(foo1);
-//        sleep(100);
-//        drive.followTrajectory(foo2);
+
+       drive.followTrajectory(foo1);
+       sleep(100);
+       drive.followTrajectory(foo2);
 
     }
 }
