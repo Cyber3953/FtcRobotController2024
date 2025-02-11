@@ -66,7 +66,7 @@ public class left_side_red extends LinearOpMode {
 
         // math.toradians(180) is arbitary
         Trajectory foo1 = drive.trajectoryBuilder(startPose)
-                .splineToLinearHeading(new Vector2d(-20, 12), Math.toRadians(90))
+                .splineToLinearHeading(new Pose2d(-20, 12), Math.toRadians(90))
                 .addTemporalMarker(1, () -> {
                     armMotor.setTargetPosition(2620); // 2450
                     armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -81,7 +81,7 @@ public class left_side_red extends LinearOpMode {
                 .build();
 
         Trajectory foo2 = drive.trajectoryBuilder(foo1.end(), false)
-                .splineToLinearHeading(new Vector2d(-18, 14), Math.toRadians(90))
+                .splineToLinearHeading(new Pose2d(-18, 14), Math.toRadians(90))
                 .addTemporalMarker(0.1, () -> {
                     // arbitary number
                     slideMotor.setTargetPosition(100);

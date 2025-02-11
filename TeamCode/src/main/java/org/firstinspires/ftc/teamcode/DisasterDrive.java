@@ -314,6 +314,7 @@ public class DisasterDrive extends LinearOpMode {
             frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            slideMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
             telemetry.addData("Arm Power", "%.2f", armMotorPower);
             telemetry.addData("Arm Encoder", "%d", armMotor.getCurrentPosition());
