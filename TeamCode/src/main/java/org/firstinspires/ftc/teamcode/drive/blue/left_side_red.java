@@ -19,15 +19,30 @@ public class left_side_red extends LinearOpMode {
     CRServo collectServo = null;
     double foo = 100;
 
-    private void lift_the_lift()
+    private void lift_the_lift(boolean slightly)
     {
-        armMotor.setTargetPosition(2620); // 2450
-        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        /*
+         * maybe want to decrease the slide motors speed
+         * so it can also extend out during the markers
+         * idk which is faster though so whatever
+         */
+        if (slightly)
+        {
+            armMotor.setTargetPosition(2000); // 2620
+            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            slideMotor.setTargetPosition(300); // 1760
+            slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
+        else
+        {
+            armMotor.setTargetPosition(2620);
+            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            slideMotor.setTargetPosition(1760);
+            slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
         armMotor.setPower(1);
         while (armMotor.isBusy()) { telemetry.addData("arm going up", true); telemetry.update(); }
 
-        slideMotor.setTargetPosition(1760);
-        slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         slideMotor.setPower(1);
         while (slideMotor.isBusy()) { telemetry.addData("slide going up", true); telemetry.update(); }
     }
@@ -104,27 +119,31 @@ public class left_side_red extends LinearOpMode {
 
         Trajectory foo1 = drive.trajectoryBuilder(startPose)
                 .splineToSplineHeading(new Pose2d(48.471, 46.988, Math.toRadians(45)), Math.toRadians(0))
+                .addTemporalMarker(0, () -> {
+                    lift_the_lift(true);
+                })
                 .build();
 
         Trajectory foo2 = drive.trajectoryBuilder(foo1.end(), true)
-                .splineToSplineHeading(new Vector2d(43.86, 25.307, Math.toRadians(0)), Math.toRadians(0))
+                .splineToSplineHeading(new Pose2d(43.86, 25.307, Math.toRadians(0)), Math.toRadians(0))
                 .build();
 
         Trajectory foo3 = drive.trajectoryBuilder(foo2.end())
-                .splineTo(new Vector2d(48.471, 46.988, Math.toRadians(45)), Math.toRadians(0))
+                .splineToSplineHeading(new Pose2d(48.471, 46.988, Math.toRadians(45)), Math.toRadians(0))
                 .build();
 
+        // drive to score and drop sample 
         drive.followTrajectory(foo1);
-
         robot.dropServo();
-        lift_the_lift();
-        sleep(50);
+        lift_the_lift(false);
         drop_the_lift(true);
-        sleep(50);
 
+        // drive to first sample on the ground
         drive.followTrajectory(foo2);
         drop_the_lift(false);
-        // for this 3rd trajectory, maybe increase while moving
-        // add same "slightly" parameter for lift_the_lift as well
+        lift_the_lift(true);
+
+        // drive to the score and drop sample
+        drive.followTrajectory(foo3);
     }
 }
