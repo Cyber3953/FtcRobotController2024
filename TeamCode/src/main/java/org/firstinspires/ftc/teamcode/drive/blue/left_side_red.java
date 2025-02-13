@@ -36,15 +36,20 @@ public class left_side_red extends LinearOpMode {
     {
         if (slightly) 
         {
-            foo = 500;
+            // arbitary numbers
+            slideMotor.setTargetPosition(500);
+            armMotor.setTargetPosition(100);
         }
+        else
+        {
             // arbitary number
-        slideMotor.setTargetPosition(slightly);
+            slideMotor.setTargetPosition(10);
+            armMotor.setTargetPosition(10);
+        }
+
         slideMotor.setPower(1);
         while (slideMotor.isBusy()) { telemetry.addData("slide going down", true); telemetry.update(); }
 
-        // arbitary number
-        armMotor.setTargetPosition(slightly);
         armMotor.setPower(1);
         while (armMotor.isBusy()) { telemetry.addData("arm going down", true); telemetry.update(); }
 
@@ -97,26 +102,29 @@ public class left_side_red extends LinearOpMode {
 
         telemetry.update();
 
-        Trajectory foo1 = drive.trajectoryBuilder(startPose))
-                .splineTo(new Vector2d(48.471, 46.988), Math.toRadians(45))
+        Trajectory foo1 = drive.trajectoryBuilder(startPose)
+                .splineToSplineHeading(new Pose2d(48.471, 46.988, Math.toRadians(45)), Math.toRadians(0))
                 .build();
 
         Trajectory foo2 = drive.trajectoryBuilder(foo1.end(), true)
-                .splineTo(new Vector2d(43.86, 25.307), Math.toRadians(0))
+                .splineToSplineHeading(new Vector2d(43.86, 25.307, Math.toRadians(0)), Math.toRadians(0))
                 .build();
 
-        Trajectory foo3 = drive.trajectoryBuilder(foo2.end()))
-                .splineTo(new Vector2d(48.471, 46.988), Math.toRadians(45))
+        Trajectory foo3 = drive.trajectoryBuilder(foo2.end())
+                .splineTo(new Vector2d(48.471, 46.988, Math.toRadians(45)), Math.toRadians(0))
                 .build();
 
         drive.followTrajectory(foo1);
 
         robot.dropServo();
-        lift_the_lift(false);
+        lift_the_lift();
         sleep(50);
         drop_the_lift(true);
         sleep(50);
 
         drive.followTrajectory(foo2);
+        drop_the_lift(false);
+        // for this 3rd trajectory, maybe increase while moving
+        // add same "slightly" parameter for lift_the_lift as well
     }
 }
