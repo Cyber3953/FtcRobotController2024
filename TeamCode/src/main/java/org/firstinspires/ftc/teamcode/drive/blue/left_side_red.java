@@ -14,16 +14,45 @@ import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 @Autonomous(group = "drive", name = "left_side_red")
 public class left_side_red extends LinearOpMode {
 
-    /*
-     calibrate everything when the claw is placed back on
-     try to learn dx, dy values fro the limelight and degrees? and put in a formula?
-     */
-
-    // first 49.47129633952249, 46.18867913273327
-    final private double TILE_SIZE = 48;
     DcMotorEx armMotor = null;
     DcMotorEx slideMotor = null;
     CRServo collectServo = null;
+    double foo = 100;
+
+    private void lift_the_lift()
+    {
+        armMotor.setTargetPosition(2620); // 2450
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armMotor.setPower(1);
+        while (armMotor.isBusy()) { telemetry.addData("arm going up", true); telemetry.update(); }
+
+        slideMotor.setTargetPosition(1760);
+        slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        slideMotor.setPower(1);
+        while (slideMotor.isBusy()) { telemetry.addData("slide going up", true); telemetry.update(); }
+    }
+
+    private void drop_the_lift(boolean slightly)
+    {
+        if (slightly) 
+        {
+            foo = 500;
+        }
+            // arbitary number
+        slideMotor.setTargetPosition(slightly);
+        slideMotor.setPower(1);
+        while (slideMotor.isBusy()) { telemetry.addData("slide going down", true); telemetry.update(); }
+
+        // arbitary number
+        armMotor.setTargetPosition(slightly);
+        armMotor.setPower(1);
+        while (armMotor.isBusy()) { telemetry.addData("arm going down", true); telemetry.update(); }
+
+        servo.setPower(1);
+        telemetry.addData("servo is spinning", true); telemetry.update();
+        sleep(2000);
+        servo.setPower(0);
+    }
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -66,41 +95,29 @@ public class left_side_red extends LinearOpMode {
 
         telemetry.update();
 
-        // math.toradians(180) is arbitary
-        Trajectory foo1 = drive.trajectoryBuilder(startPose)
+        Trajectory foo1 = drive.trajectoryBuilder(startPose))
                 .splineTo(new Vector2d(48.471, 46.988), Math.toRadians(45))
-                .addTemporalMarker(1, () -> {
-//                    armMotor.setTargetPosition(2620); // 2450
-//                    armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//                    armMotor.setPower(1);
-////                    while (armMotor.isBusy()) { telemetry.addData("arm going up", true); telemetry.update(); }
-//
-//                    slideMotor.setTargetPosition(1760);
-//                    slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//                    slideMotor.setPower(1);
-////                    while (slideMotor.isBusy()) { telemetry.addData("slide going up", true); telemetry.update(); }
-                })
                 .build();
 
-        Trajectory foo2 = drive.trajectoryBuilder(foo1.end(), false)
+        Trajectory foo2 = drive.trajectoryBuilder(foo1.end(), true)
                 .splineTo(new Vector2d(43.86, 25.307), Math.toRadians(0))
-                .addTemporalMarker(0.1, () -> {
-//                    // arbitary number
-//                    slideMotor.setTargetPosition(100);
-//                    slideMotor.setPower(1);
-//                    while (slideMotor.isBusy()) { telemetry.addData("slide going down", true); telemetry.update(); }
-//                    sleep(100); // just some delay
-//
-//                    // arbitary number
-//                    armMotor.setTargetPosition(100);
-//                    armMotor.setPower(1);
-//                    while (armMotor.isBusy()) { telemetry.addData("arm going down", true); telemetry.update(); }
-                })
                 .build();
 
-       drive.followTrajectory(foo1);
-       sleep(100);
-       drive.followTrajectory(foo2);
+        Trajectory foo3 = drive.trajectoryBuilder(foo2.end()))
+                .splineTo(new Vector2d(48.471, 46.988), Math.toRadians(45))
+                .build();
+
+        drive.followTrajectory(foo1);
+
+        robot.dropServo();
+        lift_the_lift(false);
+        sleep(50);
+        drop_the_lift(true);
+        sleep(50);
+
+        drive.followTrajectory(foo2);
+        
+
 
     }
 }
