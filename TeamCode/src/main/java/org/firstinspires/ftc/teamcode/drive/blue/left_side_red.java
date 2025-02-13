@@ -48,6 +48,8 @@ public class left_side_red extends LinearOpMode {
         armMotor.setPower(1);
         while (armMotor.isBusy()) { telemetry.addData("arm going down", true); telemetry.update(); }
 
+        if (slightly) { return; }
+        
         servo.setPower(1);
         telemetry.addData("servo is spinning", true); telemetry.update();
         sleep(2000);
@@ -116,8 +118,5 @@ public class left_side_red extends LinearOpMode {
         sleep(50);
 
         drive.followTrajectory(foo2);
-        
-
-
     }
 }
