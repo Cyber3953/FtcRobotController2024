@@ -77,7 +77,7 @@ public class DisasterDrive extends LinearOpMode {
     private static final double RIGHT_STICK_X_DEAD_ZONE = 0.1;
     private static final double RIGHT_STICK_Y_DEAD_ZONE = 0.1;
     private static final double SLOW_FACTOR = .5; // halve the speed
-    private static final int ARM_MOTOR_LIMIT = 3884;
+    private static final int ARM_MOTOR_LIMIT = 3861; // 3161
     private static final int SLIDE_MOTOR_LIMIT = 1900;
 
 
@@ -208,9 +208,9 @@ public class DisasterDrive extends LinearOpMode {
             } else {
                 armMotor.setTargetPosition(0);
             }
+
             armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             armMotor.setPower(armMotorPower);
-
             // slide motor out/in
             double slideMotorPower = adjustPower(rightStickY, LEFT_STICK_Y_DEAD_ZONE);
 
@@ -273,7 +273,7 @@ public class DisasterDrive extends LinearOpMode {
                 hangMotor.setPower(0);
             }
             if (dpad_right) {
-                hangMotor.setTargetPosition(0);
+                hangMotor.setTargetPosition(10000);
                 hangMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 hangMotor.setPower(1.0);
                 telemetry.addData("Hang Out", "");
