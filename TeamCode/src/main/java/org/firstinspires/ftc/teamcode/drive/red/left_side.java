@@ -10,6 +10,9 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.drive.DriveConstants;
@@ -21,12 +24,30 @@ public class left_side extends LinearOpMode {
     DcMotorEx armMotor = null;
     DcMotorEx slideMotor = null;
     CRServo collectServo = null;
+    NormalizedColorSensor colorSensor;
+    TouchSensor touchSensor;
     ElapsedTime time = new ElapsedTime();
-    double zoo = 0d;
-    double startTime = 0d;
+    double servo_timeout = 0d;
+    double current_time = 0d;
+    float MAX_SERVO_TIMEOUT = 1000f;
+    float gain = 6;
     boolean activate_lift = true;
     Pose2d artemis = new Pose2d(50.0, 47.5, Math.toRadians(45));
 
+    @SuppressLint("DefaultLocale")
+    private boolean color_results()
+    {
+        NormalizedRGBA colors = colorSensor.getNormalizedColors();
+
+        if (colors.red > 0.01 && colors.red > colors.blue * 2 && colors.red > colors.green * 2) {
+            return true;
+        } else if (colors.red > 0.015 && colors.green > 0.015 && colors.blue < colors.red) {
+            return true;
+        } else if (colors.blue > 0.015 && colors.blue > colors.red && colors.blue > colors.green) {
+            return true;
+        }
+        return false;
+    }
     @SuppressLint("DefaultLocale")
     private void lift_the_lift(boolean slightly)
     {
@@ -56,12 +77,19 @@ public class left_side extends LinearOpMode {
 
         while (slideMotor.getCurrentPosition() < 1800) { ez_tel(String.format("Encoder: %d", armMotor.getCurrentPosition())); idle(); }
 
-        collectServo.setPower(-1);
-        telemetry.addData("servo is spinning", true); telemetry.update();
-        sleep(1000);
-        collectServo.setPower(0);
-    }
+        current_time = time.time();
 
+        while (color_results() || servo_timeout > MAX_SERVO_TIMEOUT)
+        {
+            collectServo.setPower(-1);
+            ez_tel("servo is spinning");
+            servo_timeout = time.time() - current_time;
+        }
+
+        collectServo.setPower(0);
+        servo_timeout = 0d;
+    }
+    @SuppressLint("DefaultLocale")
     private void drop_the_lift(boolean slightly)
     {
         if (!activate_lift)
@@ -71,11 +99,11 @@ public class left_side extends LinearOpMode {
         if (slightly)
         {
             slideMotor.setTargetPosition(100);
-            armMotor.setTargetPosition(50);
+            armMotor.setTargetPosition(200);
         }
         else
         {
-            slideMotor.setTargetPosition(350);
+            slideMotor.setTargetPosition(250);
             armMotor.setTargetPosition(80);
         }
 
@@ -85,23 +113,17 @@ public class left_side extends LinearOpMode {
 
         if (slightly) { return; }
 
-        collectServo.setPower(1);
-        telemetry.addData("servo is spinning", true); telemetry.update();
-        sleep(1000);
-        collectServo.setPower(0);
-    }
+        current_time = time.time();
 
-    private void END()
-    {
-        if (!activate_lift)
+        while (!color_results() || servo_timeout > MAX_SERVO_TIMEOUT)
         {
-            return;
+            collectServo.setPower(1);
+            ez_tel("servo is spinning");
+            servo_timeout = time.time() - current_time;
         }
-        slideMotor.setTargetPosition(-10);
-        armMotor.setTargetPosition(0);
 
-        slideMotor.setPower(1);
-        armMotor.setPower(1);
+        collectServo.setPower(0);
+        servo_timeout = 0d;
     }
     private void zero_motors()
     {
@@ -112,12 +134,24 @@ public class left_side extends LinearOpMode {
         slideMotor.setPower(0);
         armMotor.setPower(0);
     }
-
     private void ez_tel(String caption)
     {
         telemetry.addData(caption, true);
         telemetry.update();
     }
+
+    //    private void END()
+//    {
+//        if (!activate_lift)
+//        {
+//            return;
+//        }
+//        slideMotor.setTargetPosition(-10);
+//        armMotor.setTargetPosition(0);
+//
+//        slideMotor.setPower(1);
+//        armMotor.setPower(1);
+//    }
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -137,9 +171,12 @@ public class left_side extends LinearOpMode {
         slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         collectServo = hardwareMap.get(CRServo.class, "collect");
+        colorSensor = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
+        touchSensor = hardwareMap.get(TouchSensor.class, "bump");
 
+        colorSensor.setGain(gain);
 
-        zoo = time.time();
+        double zoo = time.time();
         Trajectory scorePoint = drive.trajectoryBuilder(startPose)
                 .splineToLinearHeading(artemis, Math.toRadians(0))
                 .addTemporalMarker(0, () -> {
@@ -160,9 +197,6 @@ public class left_side extends LinearOpMode {
 
         Trajectory goToSecondSpecimen = drive.trajectoryBuilder(scorePoint_2.end(), true) // maybe decrease this y??
                 .splineToLinearHeading(new Pose2d(48.5, 21.0, Math.toRadians(0)), Math.toRadians(0))
-                .addTemporalMarker(1, () -> {
-                    zero_motors();
-                })
                 .build();
 
         Trajectory scorePoint_3 = drive.trajectoryBuilder(goToSecondSpecimen.end())
@@ -183,24 +217,23 @@ public class left_side extends LinearOpMode {
                 })
                 .build();
 
-        Trajectory parking = drive.trajectoryBuilder(scorePoint_3.end())
-                .splineToSplineHeading(new Pose2d(24, 0, Math.toRadians(0)), Math.toRadians(0))
-                .addTemporalMarker(0, () -> {
-                    // arbitrary number??
-                    armMotor.setTargetPosition(500);
-                    armMotor.setPower(0.5);
-                })
-                .build();
-
-        Trajectory other_parking = drive.trajectoryBuilder(scorePoint_3.end())
-                .splineToSplineHeading(new Pose2d(-54, 54, Math.toRadians(0)), Math.toRadians(0))
-                .build();
+//        Trajectory parking = drive.trajectoryBuilder(scorePoint_3.end())
+//                .splineToSplineHeading(new Pose2d(24, 0, Math.toRadians(0)), Math.toRadians(0))
+//                .addTemporalMarker(0, () -> {
+//                    // arbitrary number??
+//                    armMotor.setTargetPosition(500);
+//                    armMotor.setPower(0.5);
+//                })
+//                .build();
+//
+//        Trajectory other_parking = drive.trajectoryBuilder(scorePoint_3.end())
+//                .splineToSplineHeading(new Pose2d(-54, 54, Math.toRadians(0)), Math.toRadians(0))
+//                .build();
 
         telemetry.addData("time to build: ", time.time() - zoo);
         telemetry.update();
 
         waitForStart();
-        startTime = time.time();
         // YOU MUST CALL THIS BEFORE TRAJECTORY GO STARTS
 
         drive.update();
