@@ -49,6 +49,20 @@ public class left_side extends LinearOpMode {
         return false;
     }
     @SuppressLint("DefaultLocale")
+    private void boom()
+    {
+        current_time = System.currentTimeMillis();
+
+        do {
+            collectServo.setPower(1);
+            servo_timeout = System.currentTimeMillis() - current_time;
+            ez_tel(String.format("servo is spinning t: %f", servo_timeout));
+        } while (servo_timeout < MAX_SERVO_TIMEOUT);
+
+        collectServo.setPower(0);
+    }
+
+    @SuppressLint("DefaultLocale")
     private void lift_the_lift(boolean slightly)
     {
         if (!activate_lift)
@@ -77,17 +91,7 @@ public class left_side extends LinearOpMode {
 
         while (slideMotor.getCurrentPosition() < 1800) { ez_tel(String.format("Encoder: %d", armMotor.getCurrentPosition())); idle(); }
 
-        current_time = time.time();
-
-        while (color_results() || servo_timeout > MAX_SERVO_TIMEOUT)
-        {
-            collectServo.setPower(-1);
-            ez_tel("servo is spinning");
-            servo_timeout = time.time() - current_time;
-        }
-
-        collectServo.setPower(0);
-        servo_timeout = 0d;
+        boom();
     }
     @SuppressLint("DefaultLocale")
     private void drop_the_lift(boolean slightly)
@@ -98,13 +102,13 @@ public class left_side extends LinearOpMode {
         }
         if (slightly)
         {
-            slideMotor.setTargetPosition(100);
-            armMotor.setTargetPosition(200);
+            slideMotor.setTargetPosition(300);
+            armMotor.setTargetPosition(400);
         }
         else
         {
-            slideMotor.setTargetPosition(250);
-            armMotor.setTargetPosition(80);
+            slideMotor.setTargetPosition(300);
+            armMotor.setTargetPosition(300);
         }
 
         slideMotor.setPower(1);
@@ -113,17 +117,16 @@ public class left_side extends LinearOpMode {
 
         if (slightly) { return; }
 
-        current_time = time.time();
+        current_time = System.currentTimeMillis();
 
-        while (!color_results() || servo_timeout > MAX_SERVO_TIMEOUT)
-        {
-            collectServo.setPower(1);
-            ez_tel("servo is spinning");
-            servo_timeout = time.time() - current_time;
-        }
+        // !color_results()
+        do {
+            collectServo.setPower(-1);
+            servo_timeout = System.currentTimeMillis() - current_time;
+            ez_tel(String.format("servo is spinning t: %f", servo_timeout));
+        } while (servo_timeout < MAX_SERVO_TIMEOUT);
 
         collectServo.setPower(0);
-        servo_timeout = 0d;
     }
     private void zero_motors()
     {
@@ -185,7 +188,7 @@ public class left_side extends LinearOpMode {
                 .build();
 
         Trajectory goToFirstSpecimen = drive.trajectoryBuilder(scorePoint.end())
-                .splineToLinearHeading(new Pose2d(38.2, 21.0), Math.toRadians(0))
+                .splineToLinearHeading(new Pose2d(38.2, 21.75), Math.toRadians(0))
                 .build();
 
         Trajectory scorePoint_2 = drive.trajectoryBuilder(goToFirstSpecimen.end())
@@ -196,7 +199,7 @@ public class left_side extends LinearOpMode {
                 .build();
 
         Trajectory goToSecondSpecimen = drive.trajectoryBuilder(scorePoint_2.end(), true) // maybe decrease this y??
-                .splineToLinearHeading(new Pose2d(48.5, 21.0, Math.toRadians(0)), Math.toRadians(0))
+                .splineToLinearHeading(new Pose2d(48.5, 21.75, Math.toRadians(0)), Math.toRadians(0))
                 .build();
 
         Trajectory scorePoint_3 = drive.trajectoryBuilder(goToSecondSpecimen.end())
@@ -207,7 +210,7 @@ public class left_side extends LinearOpMode {
                 .build();
 
         Trajectory goToLastSpecimen = drive.trajectoryBuilder(scorePoint_3.end(), true)
-                .splineToLinearHeading(new Pose2d(57, 21.0, Math.toRadians(0)), Math.toRadians(0))
+                .splineToLinearHeading(new Pose2d(56.5, 22.5, Math.toRadians(0)), Math.toRadians(0))
                 .build();
 
         Trajectory scorePoint_4 = drive.trajectoryBuilder(goToLastSpecimen.end())
@@ -253,7 +256,10 @@ public class left_side extends LinearOpMode {
 
         telemetry.update();
 
+        // boom
 
+        ez_tel("boom");
+        boom();
         // drive to release a sample
         ez_tel("following 1st traj");
         drive.followTrajectory(scorePoint);
