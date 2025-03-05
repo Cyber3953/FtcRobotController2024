@@ -68,7 +68,7 @@ public class SampleMecanumDrive extends MecanumDrive {
 
     static Limelight3A lemonlight = null;
     private Pose3D botpose;
-    private YawPitchRollAngles orientation;
+    private double orientation;
     private Pose2d BotPose2D;
     private Pose2d BotPose2dEst;
     private Pose2d weightedPose;
@@ -76,8 +76,8 @@ public class SampleMecanumDrive extends MecanumDrive {
     // end
 
     public static DriveSignal signal;
-    public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(0, 0, 0);
-    public static PIDCoefficients HEADING_PID = new PIDCoefficients(0, 0, 0);
+    public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(8, 0, 0);
+    public static PIDCoefficients HEADING_PID = new PIDCoefficients(8, 0, 0);
 
     public static double LATERAL_MULTIPLIER = 1;
 
@@ -114,7 +114,7 @@ public class SampleMecanumDrive extends MecanumDrive {
         // end
 
         follower = new HolonomicPIDVAFollower(TRANSLATIONAL_PID, TRANSLATIONAL_PID, HEADING_PID,
-                new Pose2d(0.5, 0.5, Math.toRadians(5.0)), 0.5);
+                new Pose2d(0.5, 0.5, Math.toRadians(5.0)), 0.33);
 
         LynxModuleUtil.ensureMinimumFirmwareVersion(hardwareMap);
 
@@ -126,14 +126,14 @@ public class SampleMecanumDrive extends MecanumDrive {
 
         // TODO: adjust the names of the following hardware devices to match your configuration
         imu = hardwareMap.get(IMU.class, "imu");
-//        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
-//                DriveConstants.LOGO_FACING_DIR, DriveConstants.USB_FACING_DIR));
-//        imu.initialize(parameters);
-        // same exact thing as above, basically
-        RevHubOrientationOnRobot.LogoFacingDirection logo = logoFacingDirections[0];
-        RevHubOrientationOnRobot.UsbFacingDirection usb = usbFacingDirections[2];
-        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logo, usb);
-        imu.initialize(new IMU.Parameters(orientationOnRobot));
+        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
+                DriveConstants.LOGO_FACING_DIR, DriveConstants.USB_FACING_DIR));
+        imu.initialize(parameters);
+//         same exact thing as above, basically
+//        RevHubOrientationOnRobot.LogoFacingDirection logo = logoFacingDirections[0];
+//        RevHubOrientationOnRobot.UsbFacingDirection usb = usbFacingDirections[2];
+//        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logo, usb);
+//        imu.initialize(new IMU.Parameters(orientationOnRobot));
 
         frontLeft = hardwareMap.get(DcMotorEx.class, "fl");
         backLeft = hardwareMap.get(DcMotorEx.class, "bl");
@@ -234,44 +234,47 @@ public class SampleMecanumDrive extends MecanumDrive {
 
     public void update() {
 
-        // reset it
-        botpose = null;
+        updatePoseEstimate();
 
-        // get yaw and set it
-        orientation = imu.getRobotYawPitchRollAngles();
-        lemonlight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
+        // reset botpose to not induce errors
+//        botpose = null;
 
-        // get lemonlight result and get botpose (mt2)
-        LLResult result = lemonlight.getLatestResult();
-        if (result != null && result.isValid()) {
-            botpose = result.getBotpose_MT2();
-            BotPose2D = new Pose2d(botpose.getPosition().x, botpose.getPosition().y, botpose.getOrientation().getYaw());
-        }
+        // set yaw to correctly detect location
+//        orientation = imu.getRobotYawPitchRollAngles().getYaw();
+//        lemonlight.updateRobotOrientation(orientation);
 
-        // get botpose estimate and apply weights to location
-        BotPose2dEst = getPoseEstimate();
-        if (botpose == null) {
-            signal = trajectorySequenceRunner.update(getPoseEstimate(), getPoseVelocity());
+        // get lemonlight and estimate botpose
+//        LLResult result = lemonlight.getLatestResult();
+//        BotPose2dEst = getPoseEstimate();
 
-//            telemetry.addData("x (est)", BotPose2dEst.getX());
-//            telemetry.addData("y (est)", BotPose2dEst.getY());
-//            telemetry.addData("heading (est)", BotPose2dEst.getHeading());
-        } else {
-            weightedPose = new Pose2d(BotPose2D.getX() * 0.8 + BotPose2dEst.getX() * 0.2,
-                    BotPose2D.getY() * 0.8 + BotPose2dEst.getY() * 0.2,
-                    BotPose2D.getHeading() * 0.8 + BotPose2dEst.getHeading() * 0.2);
-            signal = trajectorySequenceRunner.update(weightedPose, getPoseVelocity());
+//        if (result != null) {
+//            if (result.isValid()) { }
+//            // get botpose
+//            botpose = result.getBotpose_MT2();
+//
+//            if (botpose != null) {
+//                // apply weights
+//                BotPose2D = new Pose2d(botpose.getPosition().x, botpose.getPosition().y, botpose.getOrientation().getYaw());
+//                weightedPose = new Pose2d(BotPose2D.getX() * 0.8 + BotPose2dEst.getX() * 0.2,
+//                    BotPose2D.getY() * 0.8 + BotPose2dEst.getY() * 0.2,
+//                    BotPose2D.getHeading() * 0.8 + BotPose2dEst.getHeading() * 0.2);
+//                signal = trajectorySequenceRunner.update(weightedPose, getPoseVelocity());
+//
+//                telemetry.addData("x (camera)", BotPose2D.getX());
+//                telemetry.addData("y (camera)", BotPose2D.getY());
+//                telemetry.addData("heading (camera)", BotPose2D.getHeading());
+//            }
+//        } else {
+            // just estimation
+        signal = trajectorySequenceRunner.update(getPoseEstimate(), getPoseVelocity());
+//        }
 
-//            telemetry.addData("x (est)", BotPose2dEst.getX());
-//            telemetry.addData("y (est)", BotPose2dEst.getY());
-//            telemetry.addData("heading (est)", BotPose2dEst.getHeading());
-//            telemetry.addData("x (camera)", BotPose2D.getX());
-//            telemetry.addData("y (camera)", BotPose2D.getY());
-//            telemetry.addData("heading (camera)", BotPose2D.getHeading());
-        }
-
+//
+//        telemetry.addData("x (est)", BotPose2dEst.getX());
+//        telemetry.addData("y (est)", BotPose2dEst.getY());
+//        telemetry.addData("heading (est)", BotPose2dEst.getHeading());
+//
 //        telemetry.update();
-
         if (signal != null) setDriveSignal(signal);
     }
 
