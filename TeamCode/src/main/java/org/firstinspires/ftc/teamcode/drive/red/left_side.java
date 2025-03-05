@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -57,7 +58,7 @@ public class left_side extends LinearOpMode {
             collectServo.setPower(1);
             servo_timeout = System.currentTimeMillis() - current_time;
             ez_tel(String.format("servo is spinning t: %f", servo_timeout));
-        } while (servo_timeout < MAX_SERVO_TIMEOUT || color_results());
+        } while (servo_timeout < MAX_SERVO_TIMEOUT && color_results());
 
         collectServo.setPower(0);
     }
@@ -123,7 +124,7 @@ public class left_side extends LinearOpMode {
             collectServo.setPower(-1);
             servo_timeout = System.currentTimeMillis() - current_time;
             ez_tel(String.format("servo is spinning t: %f", servo_timeout));
-        } while (servo_timeout < MAX_SERVO_TIMEOUT || !color_results());
+        } while (servo_timeout < MAX_SERVO_TIMEOUT && !color_results());
 
         collectServo.setPower(0);
     }
@@ -174,7 +175,9 @@ public class left_side extends LinearOpMode {
 
         collectServo = hardwareMap.get(CRServo.class, "collect");
         colorSensor = hardwareMap.get(NormalizedColorSensor.class, "color_sensor");
-        touchSensor = hardwareMap.get(TouchSensor.class, "bump");
+        touchSensor = hardwareMap.get(TouchSensor.class, "touch");
+
+        light = hardwareMap.get(Servo.class, "")
 
         colorSensor.setGain(gain);
 
