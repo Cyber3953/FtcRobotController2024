@@ -57,7 +57,7 @@ public class left_side extends LinearOpMode {
             collectServo.setPower(1);
             servo_timeout = System.currentTimeMillis() - current_time;
             ez_tel(String.format("servo is spinning t: %f", servo_timeout));
-        } while (servo_timeout < MAX_SERVO_TIMEOUT);
+        } while (servo_timeout < MAX_SERVO_TIMEOUT || color_results());
 
         collectServo.setPower(0);
     }
@@ -119,12 +119,11 @@ public class left_side extends LinearOpMode {
 
         current_time = System.currentTimeMillis();
 
-        // !color_results()
         do {
             collectServo.setPower(-1);
             servo_timeout = System.currentTimeMillis() - current_time;
             ez_tel(String.format("servo is spinning t: %f", servo_timeout));
-        } while (servo_timeout < MAX_SERVO_TIMEOUT);
+        } while (servo_timeout < MAX_SERVO_TIMEOUT || !color_results());
 
         collectServo.setPower(0);
     }
@@ -174,7 +173,7 @@ public class left_side extends LinearOpMode {
         slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         collectServo = hardwareMap.get(CRServo.class, "collect");
-        colorSensor = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
+        colorSensor = hardwareMap.get(NormalizedColorSensor.class, "color_sensor");
         touchSensor = hardwareMap.get(TouchSensor.class, "bump");
 
         colorSensor.setGain(gain);
