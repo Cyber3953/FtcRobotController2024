@@ -29,12 +29,18 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import android.graphics.Color;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -77,7 +83,7 @@ public class DisasterDrive extends LinearOpMode {
     private static final double RIGHT_STICK_X_DEAD_ZONE = 0.1;
     private static final double RIGHT_STICK_Y_DEAD_ZONE = 0.1;
     private static final double SLOW_FACTOR = .5; // halve the speed
-    private static final int ARM_MOTOR_LIMIT = 3861; // 3161
+    private static final int ARM_MOTOR_LIMIT = 3200; // 3161
     private static final int SLIDE_MOTOR_LIMIT = 1900;
 
 
@@ -126,12 +132,18 @@ public class DisasterDrive extends LinearOpMode {
 
         IMU imu = hardwareMap.get(IMU.class, "imu");
 
-        double maxAllowedInches = 38;
+        NormalizedColorSensor colorSensor = hardwareMap.get(NormalizedColorSensor.class, "color_sensor");
+        colorSensor.setGain(6);
+        TouchSensor touchSensor = hardwareMap.get(TouchSensor.class, "touch");
+
+        Servo light = hardwareMap.get(Servo.class, "light");
+
+        double maxAllowedInches = 41.5;
         double armHeightInches = 13.5;
         double ticksAtMaxAllowedLength = 1200;
         double encoderAtHorizontal = 678;
         double encoderAtVertical = 3181;
-//        ColorSensor colorSensor = hardwareMap.colorSensor.get("color_sensor");
+        boolean isArmReset = false;
 
         // Send telemetry message to signify robot waiting
         telemetry.addData(">", "Robot Ready.  Press Play.");    //
@@ -206,7 +218,7 @@ public class DisasterDrive extends LinearOpMode {
             if (armMotorPower > 0) {
                 armMotor.setTargetPosition(ARM_MOTOR_LIMIT);
             } else {
-                armMotor.setTargetPosition(0);
+                armMotor.setTargetPosition(-100);
             }
 
             armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -248,8 +260,6 @@ public class DisasterDrive extends LinearOpMode {
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 slideMotor.setPower(-leftTrigger);
             }
-
-
 
             // winch control
             if (!dpad_up && !dpad_down) {
@@ -315,6 +325,47 @@ public class DisasterDrive extends LinearOpMode {
             backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             slideMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+            // Get the normalized colors from the sensor
+            NormalizedRGBA colors = colorSensor.getNormalizedColors();
+            final float[] hsvValues = new float[3];
+            Color.colorToHSV(colors.toColor(), hsvValues);
+
+            /* Use telemetry to display feedback on the driver station. We show the red, green, and blue
+             * normalized values from the sensor (in the range of 0 to 1), as well as the equivalent
+             * HSV (hue, saturation and value) values. See http://web.archive.org/web/20190311170843/https://infohost.nmt.edu/tcc/help/pubs/colortheory/web/hsv.html
+             * for an explanation of HSV color. */
+
+            telemetry.addLine()
+                    .addData("Red", "%.3f", colors.red)
+                    .addData("Green", "%.3f", colors.green)
+                    .addData("Blue", "%.3f", colors.blue);
+            telemetry.addLine();
+
+            if (colors.red > 0.01 && colors.red > colors.blue * 2 && colors.red > colors.green * 2) {
+                telemetry.addData("Red", "");
+                light.setPosition(.28);
+            } else if (colors.red > 0.015 && colors.green > 0.015 && colors.blue < colors.red) {
+                telemetry.addData("Yellow", "");
+                light.setPosition(.37);
+            } else if (colors.blue > 0.015 && colors.blue > colors.red && colors.blue > colors.green) {
+                telemetry.addData("Blue","");
+                light.setPosition(.611);
+            } else {
+                light.setPosition(0.0);
+            }
+//            light.setPosition((hsvValues[0] / 180) + .279);
+
+            // send the info back to driver station using telemetry function.
+            if (touchSensor.isPressed() && !isArmReset) {
+                telemetry.addData("Touch Sensor", "Is Pressed");
+                armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                armMotor.setPower(0);
+                isArmReset = true;
+//            } else {
+////                telemetry.addData("Touch Sensor", "Is Not Pressed");
+            }
+
 
             telemetry.addData("Arm Power", "%.2f", armMotorPower);
             telemetry.addData("Arm Encoder", "%d", armMotor.getCurrentPosition());
