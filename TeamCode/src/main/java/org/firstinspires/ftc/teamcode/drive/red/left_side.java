@@ -25,6 +25,7 @@ public class left_side extends LinearOpMode {
     DcMotorEx armMotor = null;
     DcMotorEx slideMotor = null;
     CRServo collectServo = null;
+    Servo light = null;
     NormalizedColorSensor colorSensor;
     TouchSensor touchSensor;
     ElapsedTime time = new ElapsedTime();
@@ -53,6 +54,7 @@ public class left_side extends LinearOpMode {
     private void boom()
     {
         current_time = System.currentTimeMillis();
+        ez_tel(String.format("cc_t: %f, color?: %b", current_time, color_results()));
 
         do {
             collectServo.setPower(1);
@@ -143,19 +145,6 @@ public class left_side extends LinearOpMode {
         telemetry.update();
     }
 
-    //    private void END()
-//    {
-//        if (!activate_lift)
-//        {
-//            return;
-//        }
-//        slideMotor.setTargetPosition(-10);
-//        armMotor.setTargetPosition(0);
-//
-//        slideMotor.setPower(1);
-//        armMotor.setPower(1);
-//    }
-
     @Override
     public void runOpMode() throws InterruptedException {
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
@@ -177,7 +166,7 @@ public class left_side extends LinearOpMode {
         colorSensor = hardwareMap.get(NormalizedColorSensor.class, "color_sensor");
         touchSensor = hardwareMap.get(TouchSensor.class, "touch");
 
-        light = hardwareMap.get(Servo.class, "")
+        light = hardwareMap.get(Servo.class, "light");
 
         colorSensor.setGain(gain);
 
@@ -262,6 +251,10 @@ public class left_side extends LinearOpMode {
 
         ez_tel("boom");
         boom();
+
+        // cool light
+        light.setPosition(0.280);
+
         // drive to release a sample
         ez_tel("following 1st traj");
         drive.followTrajectory(scorePoint);
