@@ -31,14 +31,14 @@ public class left_side extends LinearOpMode {
     ElapsedTime time = new ElapsedTime();
     double servo_timeout = 0d;
     double current_time = 0d;
+    double color = 0d;
     float MAX_SERVO_TIMEOUT = 1000f;
     float gain = 6;
     boolean activate_lift = true;
-    Pose2d artemis = new Pose2d(50.0, 47.5, Math.toRadians(45));
+    Pose2d artemis = new Pose2d(50, 47.5, Math.toRadians(45));
 
     @SuppressLint("DefaultLocale")
-    private boolean color_results()
-    {
+    private boolean color_results() {
         NormalizedRGBA colors = colorSensor.getNormalizedColors();
 
         if (colors.red > 0.01 && colors.red > colors.blue * 2 && colors.red > colors.green * 2) {
@@ -50,37 +50,34 @@ public class left_side extends LinearOpMode {
         }
         return false;
     }
+
     @SuppressLint("DefaultLocale")
-    private void boom()
-    {
+    private void boom() {
         current_time = System.currentTimeMillis();
-        ez_tel(String.format("cc_t: %f, color?: %b", current_time, color_results()));
+
+        boolean result = color_results();
 
         do {
             collectServo.setPower(1);
             servo_timeout = System.currentTimeMillis() - current_time;
             ez_tel(String.format("servo is spinning t: %f", servo_timeout));
-        } while (servo_timeout < MAX_SERVO_TIMEOUT && color_results());
+            color = light.getPosition();
+            light.setPosition(color += 0.01);
+        } while (servo_timeout < MAX_SERVO_TIMEOUT && (color_results() || !result));
 
         collectServo.setPower(0);
     }
 
     @SuppressLint("DefaultLocale")
-    private void lift_the_lift(boolean slightly)
-    {
-        if (!activate_lift)
-        {
-            return;
-        }
-        if (slightly)
-        {
+    private void lift_the_lift(boolean slightly) {
+        if (!activate_lift) { return; }
+
+        if (slightly) {
             armMotor.setTargetPosition(2300);
             armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             slideMotor.setTargetPosition(300);
             slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        }
-        else
-        {
+        } else {
             armMotor.setTargetPosition(2700);
             armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             slideMotor.setTargetPosition(1900);
@@ -96,26 +93,22 @@ public class left_side extends LinearOpMode {
 
         boom();
     }
+
     @SuppressLint("DefaultLocale")
-    private void drop_the_lift(boolean slightly)
-    {
-        if (!activate_lift)
-        {
-            return;
-        }
-        if (slightly)
-        {
+    private void drop_the_lift(boolean slightly) {
+        if (!activate_lift) { return; }
+
+        if (slightly) {
             slideMotor.setTargetPosition(300);
-            armMotor.setTargetPosition(400);
-        }
-        else
-        {
-            slideMotor.setTargetPosition(300);
-            armMotor.setTargetPosition(300);
+            armMotor.setTargetPosition(800);
+
+        } else {
+            slideMotor.setTargetPosition(250);
+            armMotor.setTargetPosition(225);
         }
 
         slideMotor.setPower(1);
-        while (slideMotor.getCurrentPosition() > 1500) { idle(); }
+        while (slideMotor.getCurrentPosition() > 1200){ idle(); }
         armMotor.setPower(0.9);
 
         if (slightly) { return; }
@@ -130,17 +123,14 @@ public class left_side extends LinearOpMode {
 
         collectServo.setPower(0);
     }
-    private void zero_motors()
-    {
-        if (!activate_lift)
-        {
-            return;
-        }
+
+    private void zero_motors() {
+        if (!activate_lift) { return; }
         slideMotor.setPower(0);
         armMotor.setPower(0);
     }
-    private void ez_tel(String caption)
-    {
+
+    private void ez_tel(String caption) {
         telemetry.addData(caption, true);
         telemetry.update();
     }
@@ -169,6 +159,8 @@ public class left_side extends LinearOpMode {
         light = hardwareMap.get(Servo.class, "light");
 
         colorSensor.setGain(gain);
+
+        light.setPosition(0.280);
 
         double zoo = time.time();
         Trajectory scorePoint = drive.trajectoryBuilder(startPose)
@@ -201,7 +193,7 @@ public class left_side extends LinearOpMode {
                 .build();
 
         Trajectory goToLastSpecimen = drive.trajectoryBuilder(scorePoint_3.end(), true)
-                .splineToLinearHeading(new Pose2d(56.5, 22.5, Math.toRadians(0)), Math.toRadians(0))
+                .splineToLinearHeading(new Pose2d(56, 23.5, Math.toRadians(0)), Math.toRadians(0))
                 .build();
 
         Trajectory scorePoint_4 = drive.trajectoryBuilder(goToLastSpecimen.end())
@@ -227,6 +219,8 @@ public class left_side extends LinearOpMode {
         telemetry.addData("time to build: ", time.time() - zoo);
         telemetry.update();
 
+        light.setPosition(0.5);
+
         waitForStart();
         // YOU MUST CALL THIS BEFORE TRAJECTORY GO STARTS
 
@@ -236,24 +230,15 @@ public class left_side extends LinearOpMode {
         double difference = 100 * Math.abs(hardwareMap.voltageSensor.iterator().next().getVoltage() - 14.00) / 14.00;
 
         telemetry.addData("voltage error (norm. lvl. is 15%) %", difference);
-        if (difference > 21)
-        {
+        if (difference > 21) {
             telemetry.addData("Please change battery", true);
-        }
-        else if (difference > 17)
-        {
+        } else if (difference > 17) {
             telemetry.addData("Change battery soon", true);
         }
 
         telemetry.update();
 
-        // boom
-
-        ez_tel("boom");
-        boom();
-
-        // cool light
-        light.setPosition(0.280);
+        light.setPosition(0.555);
 
         // drive to release a sample
         ez_tel("following 1st traj");
@@ -264,6 +249,7 @@ public class left_side extends LinearOpMode {
         zero_motors();
         ez_tel("slightly dropping the arm and slide");
         drop_the_lift(true);
+
 
         // drives to first specimen location
         ez_tel("following 2nd traj");
