@@ -194,6 +194,10 @@ public class DisasterDrive extends LinearOpMode {
             xButton = xButton || gamepad2.x;
             yButton = yButton || gamepad2.y;
 
+            if (xButton)
+            {
+                slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            }
             // slow mode on & off
             if (yButton) {
                 yButtonDown = true;
@@ -218,7 +222,7 @@ public class DisasterDrive extends LinearOpMode {
             if (armMotorPower > 0) {
                 armMotor.setTargetPosition(ARM_MOTOR_LIMIT);
             } else {
-                armMotor.setTargetPosition(-100);
+                armMotor.setTargetPosition(-10000);
             }
 
             armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -245,7 +249,7 @@ public class DisasterDrive extends LinearOpMode {
                 slideMotor.setPower(-1.0);
             }
             if (angleDegrees > 90) {
-                slideMotor.setTargetPosition(0);
+                slideMotor.setTargetPosition(-10000);
                 slideMotor.setPower(-1.0);
 
             }
@@ -256,7 +260,7 @@ public class DisasterDrive extends LinearOpMode {
                 slideMotor.setPower(rightTrigger);
             }
             if (leftTrigger > 0) {
-                slideMotor.setTargetPosition(0);
+                slideMotor.setTargetPosition(-10000);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 slideMotor.setPower(-leftTrigger);
             }

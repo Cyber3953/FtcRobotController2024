@@ -35,10 +35,11 @@ public class left_side extends LinearOpMode {
     float MAX_SERVO_TIMEOUT = 1000f;
     float gain = 6;
     boolean activate_lift = true;
-    Pose2d artemis = new Pose2d(50, 47.5, Math.toRadians(45));
+    Pose2d artemis = new Pose2d(49.8, 47.3, Math.toRadians(45));
 
     @SuppressLint("DefaultLocale")
-    private boolean color_results() {
+    private boolean color_results()
+    {
         NormalizedRGBA colors = colorSensor.getNormalizedColors();
 
         if (colors.red > 0.01 && colors.red > colors.blue * 2 && colors.red > colors.green * 2) {
@@ -51,19 +52,45 @@ public class left_side extends LinearOpMode {
         return false;
     }
 
+    private void rainbow(double increment)
+    {
+        color = light.getPosition();
+        light.setPosition(color += increment);
+
+        if (light.getPosition() > 0.722)
+        {
+            light.setPosition(0.280);
+        }
+    }
+
     @SuppressLint("DefaultLocale")
-    private void boom() {
+    private void boom()
+    {
         current_time = System.currentTimeMillis();
 
         boolean result = color_results();
 
         do {
-            collectServo.setPower(1);
+            collectServo.setPower(0.75);
             servo_timeout = System.currentTimeMillis() - current_time;
             ez_tel(String.format("servo is spinning t: %f", servo_timeout));
-            color = light.getPosition();
-            light.setPosition(color += 0.01);
+            rainbow(0.001);
         } while (servo_timeout < MAX_SERVO_TIMEOUT && (color_results() || !result));
+
+        collectServo.setPower(0);
+    }
+
+    @SuppressLint("DefaultLocale")
+    private void reverse_boom()
+    {
+        current_time = System.currentTimeMillis();
+
+        do {
+            collectServo.setPower(-1);
+            servo_timeout = System.currentTimeMillis() - current_time;
+            ez_tel(String.format("servo is spinning t: %f", servo_timeout));
+            rainbow(0.001);
+        } while (servo_timeout < MAX_SERVO_TIMEOUT && !color_results());
 
         collectServo.setPower(0);
     }
@@ -78,9 +105,9 @@ public class left_side extends LinearOpMode {
             slideMotor.setTargetPosition(300);
             slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         } else {
-            armMotor.setTargetPosition(2700);
+            armMotor.setTargetPosition(2735);
             armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            slideMotor.setTargetPosition(1900);
+            slideMotor.setTargetPosition(1849);
             slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         }
 
@@ -89,7 +116,11 @@ public class left_side extends LinearOpMode {
 
         if (slightly) { return; }
 
-        while (slideMotor.getCurrentPosition() < 1800) { ez_tel(String.format("Encoder: %d", armMotor.getCurrentPosition())); idle(); }
+        while (slideMotor.getCurrentPosition() < 1800) {
+            ez_tel(String.format("Encoder: %d", armMotor.getCurrentPosition()));
+            idle();
+            rainbow(0.001);
+        }
 
         boom();
     }
@@ -100,28 +131,20 @@ public class left_side extends LinearOpMode {
 
         if (slightly) {
             slideMotor.setTargetPosition(300);
-            armMotor.setTargetPosition(800);
+            armMotor.setTargetPosition(600);
 
         } else {
             slideMotor.setTargetPosition(250);
-            armMotor.setTargetPosition(225);
+            armMotor.setTargetPosition(100);
         }
 
         slideMotor.setPower(1);
-        while (slideMotor.getCurrentPosition() > 1200){ idle(); }
+        while (slideMotor.getCurrentPosition() > 1200) { idle(); rainbow(0.001); }
         armMotor.setPower(0.9);
 
         if (slightly) { return; }
 
-        current_time = System.currentTimeMillis();
-
-        do {
-            collectServo.setPower(-1);
-            servo_timeout = System.currentTimeMillis() - current_time;
-            ez_tel(String.format("servo is spinning t: %f", servo_timeout));
-        } while (servo_timeout < MAX_SERVO_TIMEOUT && !color_results());
-
-        collectServo.setPower(0);
+        reverse_boom();
     }
 
     private void zero_motors() {
@@ -171,7 +194,7 @@ public class left_side extends LinearOpMode {
                 .build();
 
         Trajectory goToFirstSpecimen = drive.trajectoryBuilder(scorePoint.end())
-                .splineToLinearHeading(new Pose2d(38.2, 21.75), Math.toRadians(0))
+                .splineToLinearHeading(new Pose2d(38.5, 21.75), Math.toRadians(0))
                 .build();
 
         Trajectory scorePoint_2 = drive.trajectoryBuilder(goToFirstSpecimen.end())
@@ -181,8 +204,8 @@ public class left_side extends LinearOpMode {
                 })
                 .build();
 
-        Trajectory goToSecondSpecimen = drive.trajectoryBuilder(scorePoint_2.end(), true) // maybe decrease this y??
-                .splineToLinearHeading(new Pose2d(48.5, 21.75, Math.toRadians(0)), Math.toRadians(0))
+        Trajectory goToSecondSpecimen = drive.trajectoryBuilder(scorePoint_2.end(), true)
+                .splineToLinearHeading(new Pose2d(50.0, 21.75, Math.toRadians(0)), Math.toRadians(0))
                 .build();
 
         Trajectory scorePoint_3 = drive.trajectoryBuilder(goToSecondSpecimen.end())
@@ -193,11 +216,11 @@ public class left_side extends LinearOpMode {
                 .build();
 
         Trajectory goToLastSpecimen = drive.trajectoryBuilder(scorePoint_3.end(), true)
-                .splineToLinearHeading(new Pose2d(56, 23.5, Math.toRadians(0)), Math.toRadians(0))
+                .splineToLinearHeading(new Pose2d(59.25, 21.5, Math.toRadians(0)), Math.toRadians(0))
                 .build();
 
         Trajectory scorePoint_4 = drive.trajectoryBuilder(goToLastSpecimen.end())
-                .splineToLinearHeading(artemis, Math.toRadians(0))
+                .splineToLinearHeading(artemis.plus(new Pose2d(0.5, 0.5)), Math.toRadians(0))
                 .addTemporalMarker(0, () -> {
                     lift_the_lift(true);
                 })
@@ -216,27 +239,20 @@ public class left_side extends LinearOpMode {
 //                .splineToSplineHeading(new Pose2d(-54, 54, Math.toRadians(0)), Math.toRadians(0))
 //                .build();
 
+        double difference = 100 * Math.abs(hardwareMap.voltageSensor.iterator().next().getVoltage() - 13.50) / 13.50;
+        if (difference > 17) { telemetry.addData("Please change battery", true);
+        } else if (difference > 11) { telemetry.addData("Change battery soon", true); }
+
         telemetry.addData("time to build: ", time.time() - zoo);
+        telemetry.addData("voltage error (norm difference 2-9 %", difference);
         telemetry.update();
 
         light.setPosition(0.5);
 
         waitForStart();
-        // YOU MUST CALL THIS BEFORE TRAJECTORY GO STARTS
-
         drive.update();
+
         if (isStopRequested()) return;
-
-        double difference = 100 * Math.abs(hardwareMap.voltageSensor.iterator().next().getVoltage() - 14.00) / 14.00;
-
-        telemetry.addData("voltage error (norm. lvl. is 15%) %", difference);
-        if (difference > 21) {
-            telemetry.addData("Please change battery", true);
-        } else if (difference > 17) {
-            telemetry.addData("Change battery soon", true);
-        }
-
-        telemetry.update();
 
         light.setPosition(0.555);
 
