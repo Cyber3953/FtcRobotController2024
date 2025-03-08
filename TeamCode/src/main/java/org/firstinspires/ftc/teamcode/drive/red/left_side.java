@@ -71,13 +71,13 @@ public class left_side extends LinearOpMode {
         boolean result = color_results();
 
         do {
-            collectServo.setPower(0.75);
+            collectServo.setPower(0.66);
             servo_timeout = System.currentTimeMillis() - current_time;
             ez_tel(String.format("servo is spinning t: %f", servo_timeout));
             rainbow(0.001);
         } while (servo_timeout < MAX_SERVO_TIMEOUT && (color_results() || !result));
 
-        collectServo.setPower(0);
+        collectServo.setPower(0i);
     }
 
     @SuppressLint("DefaultLocale")
@@ -96,7 +96,8 @@ public class left_side extends LinearOpMode {
     }
 
     @SuppressLint("DefaultLocale")
-    private void lift_the_lift(boolean slightly) {
+    private void lift_the_lift(boolean slightly)
+    {
         if (!activate_lift) { return; }
 
         if (slightly) {
@@ -126,7 +127,8 @@ public class left_side extends LinearOpMode {
     }
 
     @SuppressLint("DefaultLocale")
-    private void drop_the_lift(boolean slightly) {
+    private void drop_the_lift(boolean slightly)
+    {
         if (!activate_lift) { return; }
 
         if (slightly) {
@@ -147,13 +149,15 @@ public class left_side extends LinearOpMode {
         reverse_boom();
     }
 
-    private void zero_motors() {
+    private void zero_motors()
+    {
         if (!activate_lift) { return; }
         slideMotor.setPower(0);
         armMotor.setPower(0);
     }
 
-    private void ez_tel(String caption) {
+    private void ez_tel(String caption)
+    {
         telemetry.addData(caption, true);
         telemetry.update();
     }
@@ -194,7 +198,7 @@ public class left_side extends LinearOpMode {
                 .build();
 
         Trajectory goToFirstSpecimen = drive.trajectoryBuilder(scorePoint.end())
-                .splineToLinearHeading(new Pose2d(38.5, 21.75), Math.toRadians(0))
+                .splineToLinearHeading(new Pose2d(38.75, 21.50), Math.toRadians(0))
                 .build();
 
         Trajectory scorePoint_2 = drive.trajectoryBuilder(goToFirstSpecimen.end())
@@ -216,35 +220,22 @@ public class left_side extends LinearOpMode {
                 .build();
 
         Trajectory goToLastSpecimen = drive.trajectoryBuilder(scorePoint_3.end(), true)
-                .splineToLinearHeading(new Pose2d(59.25, 21.5, Math.toRadians(0)), Math.toRadians(0))
+                .splineToLinearHeading(new Pose2d(61, 21.5, Math.toRadians(0)), Math.toRadians(0))
                 .build();
 
         Trajectory scorePoint_4 = drive.trajectoryBuilder(goToLastSpecimen.end())
-                .splineToLinearHeading(artemis.plus(new Pose2d(0.5, 0.5)), Math.toRadians(0))
+                .splineToLinearHeading(artemis.plus(new Pose2d(0.75, 0.75)), Math.toRadians(0))
                 .addTemporalMarker(0, () -> {
                     lift_the_lift(true);
                 })
                 .build();
 
-//        Trajectory parking = drive.trajectoryBuilder(scorePoint_3.end())
-//                .splineToSplineHeading(new Pose2d(24, 0, Math.toRadians(0)), Math.toRadians(0))
-//                .addTemporalMarker(0, () -> {
-//                    // arbitrary number??
-//                    armMotor.setTargetPosition(500);
-//                    armMotor.setPower(0.5);
-//                })
-//                .build();
-//
-//        Trajectory other_parking = drive.trajectoryBuilder(scorePoint_3.end())
-//                .splineToSplineHeading(new Pose2d(-54, 54, Math.toRadians(0)), Math.toRadians(0))
-//                .build();
-
-        double difference = 100 * Math.abs(hardwareMap.voltageSensor.iterator().next().getVoltage() - 13.50) / 13.50;
+        double difference = 100 * Math.abs(hardwareMap.voltageSensor.iterator().next().getVoltage() - 14.33) / 14.33;
         if (difference > 17) { telemetry.addData("Please change battery", true);
         } else if (difference > 11) { telemetry.addData("Change battery soon", true); }
 
         telemetry.addData("time to build: ", time.time() - zoo);
-        telemetry.addData("voltage error (norm difference 2-9 %", difference);
+        telemetry.addData("voltage error (norm difference 2-9) %", difference);
         telemetry.update();
 
         light.setPosition(0.5);
@@ -322,13 +313,6 @@ public class left_side extends LinearOpMode {
         zero_motors();
         ez_tel("slightly dropping the arm and slide");
         drop_the_lift(true);
-
-//        drive.followTrajectory(other_parking);
-        // this function above doesnt work
-//        END();
-        /*
-        NEVER USE DROP_THE_LIFT IN TRAJS 384 -214
-         */
 
     }
 }
